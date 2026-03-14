@@ -23,12 +23,12 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @GetMapping("/{username}")
+    @GetMapping("/name/{username}")
     public ResponseEntity<GetUserDTO> getUserByUserName(@PathVariable String username) {
         return ResponseEntity.ok(userService.getUserByUsername(username));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public ResponseEntity<GetUserDTO> getUserById(@PathVariable String id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
