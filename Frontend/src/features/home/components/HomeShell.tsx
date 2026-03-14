@@ -10,6 +10,7 @@ type HomeTab = 'home' | 'settings' | 'cameras'
 interface HomeShellProps {
   readonly activeTab: HomeTab
   readonly children: ReactNode
+  readonly contentClassName?: string
 }
 
 interface TabConfig {
@@ -42,14 +43,18 @@ const navTabs: readonly TabConfig[] = [
   },
 ]
 
-export const HomeShell: FC<HomeShellProps> = ({ activeTab, children }) => {
+export const HomeShell: FC<HomeShellProps> = ({ activeTab, children, contentClassName }) => {
+  const contentClasses = ['home-shell-content', contentClassName].filter(Boolean).join(' ')
+  const isMapContent = contentClassName === 'home-shell-content--map'
+  const shellClasses = ['home-shell', isMapContent ? 'home-shell--map' : null].filter(Boolean).join(' ')
+
   return (
-    <main className="home-shell">
+    <main className={shellClasses}>
       <header className="home-shell-header">
         <img className="home-shell-logo" src="/logo.webp" alt={labels.logoAlt} />
       </header>
 
-      <section className="home-shell-content">{children}</section>
+      <section className={contentClasses}>{children}</section>
 
       <footer className="home-shell-footer">
         <nav className="home-shell-nav" aria-label={labels.homeNavAriaLabel}>

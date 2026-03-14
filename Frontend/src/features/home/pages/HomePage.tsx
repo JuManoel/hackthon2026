@@ -1,7 +1,7 @@
 import { useEffect, type FC } from 'react'
 
-import { Spinner } from '../../../components/Spinner'
 import { labels } from '../../../constants/labels'
+import { HomeBirdMap } from '../../map/components/HomeBirdMap'
 import { HomeShell } from '../components/HomeShell'
 
 interface HomePageProps {
@@ -14,9 +14,9 @@ export const HomePage: FC<HomePageProps> = () => {
   }, [])
 
   return (
-    <HomeShell activeTab="home">
-      <div className="home-sandbox-loader-wrap">
-        <Spinner ariaHidden={false} ariaLabel={labels.homeLoaderAria} size="lg" tone="dark" />
+    <HomeShell activeTab="home" contentClassName="home-shell-content--map">
+      <div className="home-map-wrap">
+        <HomeBirdMap />
       </div>
     </HomeShell>
   )

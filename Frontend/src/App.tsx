@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import { LoginPage } from './features/auth/pages/LoginPage'
 import { RegisterPage } from './features/auth/pages/RegisterPage'
+import { CameraDetailPage } from './features/home/pages/CameraDetailPage'
 import { CamerasPage } from './features/home/pages/CamerasPage'
 import { HomePage } from './features/home/pages/HomePage'
 import { SettingsPage } from './features/home/pages/SettingsPage'
@@ -26,6 +27,7 @@ const App: FC<AppProps> = () => {
       <Route path={routes.home} element={<HomePage />} />
       <Route path={routes.settings} element={<SettingsPage />} />
       <Route path={routes.cameras} element={<CamerasPage />} />
+      <Route path={`${routes.cameras}/:cameraId`} element={<CameraDetailPage />} />
       <Route path={routes.login} element={<LoginPage />} />
       <Route path={routes.register} element={<RegisterPage />} />
       <Route path="*" element={<Navigate to={routes.home} replace />} />

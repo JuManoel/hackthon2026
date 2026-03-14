@@ -1,4 +1,6 @@
 .home-shell {
+  --home-header-height: 56px;
+  --home-footer-height: 82px;
   min-height: 100svh;
   width: 100%;
   display: flex;
@@ -69,6 +71,45 @@
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+.home-map-wrap {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.home-shell-content--map {
+  display: block;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-camera-detail-placeholder {
+  width: min(100%, 480px);
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 12px;
+  background: var(--color-neutral-0);
+  box-shadow: var(--shadow-soft-lg);
+  padding: 18px;
+}
+
+.home-camera-detail-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-title-3-size);
+  line-height: var(--text-title-3-line);
+  font-weight: var(--text-title-3-weight);
+}
+
+.home-camera-detail-subtitle {
+  margin: 10px 0 0;
+  color: var(--color-neutral-700);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
 }
 
 .home-shell-footer {
@@ -162,8 +203,14 @@
 
 @media (min-width: 768px) {
   .home-shell {
+    --home-footer-height: 84px;
     align-items: center;
     padding: 10px;
+  }
+
+  .home-shell--map {
+    align-items: stretch;
+    padding: 0;
   }
 
   .home-shell-header,
@@ -171,12 +218,27 @@
     width: min(100%, 980px);
   }
 
+  .home-shell--map .home-shell-header,
+  .home-shell--map .home-shell-content {
+    width: 100%;
+  }
+
   .home-shell-header {
     border-radius: 16px 16px 0 0;
   }
 
+  .home-shell--map .home-shell-header {
+    border-radius: 0;
+  }
+
   .home-shell-content {
     padding-bottom: 100px;
+  }
+
+  .home-shell-content.home-shell-content--map {
+    width: 100%;
+    height: auto;
+    padding: 0;
   }
 
   .home-shell-footer {
