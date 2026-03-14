@@ -1,0 +1,30 @@
+# Stage 1: build
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# copiar dependencias
+COPY package*.json ./
+
+RUN npm install
+
+# copiar código
+COPY . .
+
+# build de producción
+RUN npm run build
+
+
+# Stage 2: servir con nginx
+FROM nginx:alpine
+
+# eliminar configuración default
+RUN rm -rf /usr/share/nginx/html/*
+
+# copiar build
+COPY --from=build /app/build /usr/share/nginx/html
+
+# exponer puerto
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
