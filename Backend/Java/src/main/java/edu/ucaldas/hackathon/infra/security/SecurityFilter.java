@@ -75,9 +75,9 @@ public class SecurityFilter extends OncePerRequestFilter {
         System.out.println(request);
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             var token = authorizationHeader.replace("Bearer ", ""); // duvidas sobre os 2 espacos
-            var userEmail = tokenService.getSubject(token);
-            if (userEmail != null) {
-                UserDetails user = userRepository.findByEmailAndIsActiveTrue(userEmail);
+            var username = tokenService.getSubject(token);
+            if (username != null) {
+                UserDetails user = userRepository.getUserByUsername(username);
                 if (user != null) {
                     var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);

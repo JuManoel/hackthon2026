@@ -19,50 +19,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfiguration {
 
     @Autowired
-    private SecurityFilter securityFilter; 
+    private SecurityFilter securityFilter;
 
-    /**
-     * Configures the security filter chain for the application.
-     * <p>
-     * - Disables CSRF protection.
-     * - Allows unauthenticated access to the "/login" endpoint.
-     * - Allows unauthenticated POST requests to "/user" for user registration.
-     * - Restricts POST requests to "/review/house" to users with "ROLE_ADMIN" or
-     * "ROLE_CLIENT".
-     * - Restricts POST requests to "/house/**" to users with "ROLE_ADMIN" or
-     * "ROLE_OWNER".
-     * - Restricts POST requests to "/rent" to users with "ROLE_ADMIN" or
-     * "ROLE_OWNER".
-     * - Restricts PUT requests to "/rent/accept" to users with "ROLE_ADMIN" or
-     * "ROLE_CLIENT".
-     * - Restricts DELETE requests to "/rent" to users with "ROLE_ADMIN" or
-     * "ROLE_OWNER".
-     * - Restricts GET requests to "/rent/client" to users with "ROLE_ADMIN" or
-     * "ROLE_CLIENT".
-     * - Restricts GET requests to "/rent/owener" to users with "ROLE_ADMIN" or
-     * "ROLE_OWNER".
-     * - Requires authentication for all other requests.
-     * - Configures the session management to be stateless.
-     * - Adds a custom security filter before the
-     * UsernamePasswordAuthenticationFilter.
-     *
-     * @param http the {@link HttpSecurity} to modify
-     * @return the configured {@link SecurityFilterChain}
-     * @throws Exception if an error occurs during configuration
-     */
+    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.cors().and().csrf(csrf -> csrf.disable())
+        return http.cors(cors -> cors.disable())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/login").permitAll();
+                    auth.requestMatchers("/auth/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();
-                    auth.requestMatchers(HttpMethod.POST, "/review/house").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT");
-                    auth.requestMatchers(HttpMethod.POST, "/house/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER");
-                    auth.requestMatchers(HttpMethod.POST, "/rent").hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER");
-                    auth.requestMatchers(HttpMethod.PUT, "/rent/accept").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT");
-                    auth.requestMatchers(HttpMethod.DELETE, "/rent").hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER");
-                    auth.requestMatchers(HttpMethod.GET, "/rent/client").hasAnyAuthority("ROLE_ADMIN", "ROLE_CLIENT");
-                    auth.requestMatchers(HttpMethod.GET, "/rent/owener").hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER");
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
