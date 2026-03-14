@@ -2,7 +2,7 @@ package edu.ucaldas.hackathon.models;
 
 public enum Role {
     ADMIN("ADMIN"),
-    GUIED("GUIED");
+    GUIDE("GUIDE");
 
     private String role;
 

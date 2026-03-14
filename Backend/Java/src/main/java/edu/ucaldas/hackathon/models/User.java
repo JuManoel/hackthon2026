@@ -63,8 +63,8 @@ public class User implements UserDetails {
         switch (this.role) {
             case ADMIN:
                 return List.of(new SimpleGrantedAuthority("ADMIN"));
-            case GUIED:
-                return List.of(new SimpleGrantedAuthority("GUIED"));
+            case GUIDE:
+                return List.of(new SimpleGrantedAuthority("GUIDE"));
 
             default:
                 return null;
