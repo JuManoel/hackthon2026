@@ -1,11 +1,13 @@
 import { useEffect, useState, type FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { labels } from '../../../constants/labels'
-import { AuthLink } from '../components/AuthLink'
 import { AuthLayout } from '../components/AuthLayout'
 import { PasswordField } from '../components/PasswordField'
 import { TextField } from '../components/TextField'
+import { useAuth } from '../hooks/useAuth'
 import type { LoginFormValues } from '../types/auth'
+import { validatePassword, validateUsername } from '../utils/auth.validation'
 
 const initialValues: LoginFormValues = {
   username: '',
@@ -13,11 +15,43 @@ const initialValues: LoginFormValues = {
 }
 
 export const LoginPage: FC = () => {
+  const navigate = useNavigate()
+  const { login, isLoading, error, isAuthenticated, clearError } = useAuth()
   const [formValues, setFormValues] = useState(initialValues)
+  const [fieldErrors, setFieldErrors] = useState<Partial<LoginFormValues>>({})
 
   useEffect(() => {
     document.title = labels.loginPageTitle
   }, [])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/home', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
+
+  const handleSubmit = async (): Promise<void> => {
+    const usernameError = validateUsername(formValues.username)
+    const passwordError = validatePassword(formValues.password)
+
+    setFieldErrors({
+      username: usernameError ?? undefined,
+      password: passwordError ?? undefined,
+    })
+
+    if (usernameError || passwordError) {
+      return
+    }
+
+    const didLogin = await login({
+      username: formValues.username.trim(),
+      password: formValues.password,
+    })
+
+    if (didLogin) {
+      navigate('/home', { replace: true })
+    }
+  }
 
   return (
     <AuthLayout
@@ -25,25 +59,40 @@ export const LoginPage: FC = () => {
       subtitle={labels.loginSubtitle}
       logoAlt={labels.logoAlt}
       submitLabel={labels.loginSubmit}
+      submittingLabel={labels.loginSubmitting}
       footerPrefix={labels.loginFooterPrefix}
       footerActionLabel={labels.loginFooterAction}
       footerActionPath="/register"
-      onSubmit={() => {
-        return
-      }}
+      onSubmit={handleSubmit}
+      isSubmitting={isLoading}
+      submitDisabled={isLoading}
+      formError={error}
     >
       <TextField
         id="login-username"
         label={labels.usernameLabel}
         placeholder={labels.usernamePlaceholder}
         value={formValues.username}
+        error={fieldErrors.username}
+        disabled={isLoading}
         autoComplete="username"
-        onChange={(event) =>
+        onChange={(event) => {
+          if (error) {
+            clearError()
+          }
+
           setFormValues((currentValues) => ({
             ...currentValues,
             username: event.target.value,
           }))
-        }
+
+          if (fieldErrors.username) {
+            setFieldErrors((currentErrors) => ({
+              ...currentErrors,
+              username: undefined,
+            }))
+          }
+        }}
       />
 
       <PasswordField
@@ -51,17 +100,28 @@ export const LoginPage: FC = () => {
         label={labels.passwordLabel}
         placeholder={labels.passwordPlaceholder}
         value={formValues.password}
+        error={fieldErrors.password}
+        disabled={isLoading}
         autoComplete="current-password"
         toggleLabel={labels.passwordToggle}
-        onChange={(event) =>
+        onChange={(event) => {
+          if (error) {
+            clearError()
+          }
+
           setFormValues((currentValues) => ({
             ...currentValues,
             password: event.target.value,
           }))
-        }
-      />
 
-      <AuthLink variant="inline" label={labels.forgotPassword} />
+          if (fieldErrors.password) {
+            setFieldErrors((currentErrors) => ({
+              ...currentErrors,
+              password: undefined,
+            }))
+          }
+        }}
+      />
     </AuthLayout>
   )
 }

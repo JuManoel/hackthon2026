@@ -73,6 +73,90 @@
   justify-content: center;
 }
 
+.settings-page-wrap,
+.cameras-page-wrap {
+  width: min(100%, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-page-title,
+.cameras-management-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-title-2-size);
+  line-height: var(--text-title-2-line);
+  font-weight: var(--text-title-2-weight);
+}
+
+.settings-page-title {
+  text-align: center;
+}
+
+.settings-card,
+.cameras-management-card {
+  padding: 16px;
+}
+
+.settings-card-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-label-lg-size);
+  line-height: var(--text-label-lg-line);
+  font-weight: var(--text-label-lg-weight);
+}
+
+.settings-profile-grid {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.settings-profile-item {
+  display: grid;
+  gap: 2px;
+}
+
+.settings-profile-item dt {
+  margin: 0;
+  color: var(--color-neutral-500);
+  font-size: var(--text-label-sm-size);
+  line-height: var(--text-label-sm-line);
+  font-weight: var(--text-label-sm-weight);
+}
+
+.settings-profile-item dd {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  font-weight: var(--text-body-weight);
+}
+
+.settings-actions {
+  margin-top: 12px;
+  display: flex;
+}
+
+.settings-actions .auth-submit {
+  width: 100%;
+}
+
+.cameras-management-description {
+  margin: 8px 0 0;
+  color: var(--color-neutral-700);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+.cameras-management-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .home-map-wrap {
   width: 100%;
   height: 100%;
@@ -149,6 +233,20 @@
   transition: background-color 120ms ease, color 120ms ease;
   position: relative;
   z-index: 1;
+  opacity: 0;
+  animation: home-nav-item-fade 320ms ease-out forwards;
+}
+
+.home-shell-nav-item:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.home-shell-nav-item:nth-child(2) {
+  animation-delay: 100ms;
+}
+
+.home-shell-nav-item:nth-child(3) {
+  animation-delay: 160ms;
 }
 
 .home-shell-nav-item.is-active {
@@ -199,6 +297,23 @@
   font-size: 10px;
   line-height: 12px;
   font-weight: var(--text-label-sm-weight);
+}
+
+@keyframes home-nav-item-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-shell-nav-item {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 @media (min-width: 768px) {

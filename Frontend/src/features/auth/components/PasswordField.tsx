@@ -12,6 +12,8 @@ interface PasswordFieldProps {
   readonly onChange: ChangeEventHandler<HTMLInputElement>
   readonly autoComplete?: string
   readonly toggleLabel: string
+  readonly error?: string | null
+  readonly disabled?: boolean
 }
 
 export const PasswordField: FC<PasswordFieldProps> = ({
@@ -22,11 +24,14 @@ export const PasswordField: FC<PasswordFieldProps> = ({
   onChange,
   autoComplete,
   toggleLabel,
+  error = null,
+  disabled = false,
 }) => {
   const { inputType, isVisible, toggle } = usePasswordVisibility()
+  const errorId = error ? `${id}-error` : undefined
 
   return (
-    <div className="auth-field">
+    <div className={`auth-field ${error ? 'auth-field--error' : ''}`}>
       <label className="auth-label" htmlFor={id}>
         {label}
       </label>
@@ -39,11 +44,15 @@ export const PasswordField: FC<PasswordFieldProps> = ({
           autoComplete={autoComplete}
           onChange={onChange}
           className="auth-input-password"
+          isInvalid={Boolean(error)}
+          ariaDescribedBy={errorId}
+          disabled={disabled}
         />
         <button
           type="button"
           className="auth-password-toggle"
           onClick={toggle}
+          disabled={disabled}
           aria-label={toggleLabel}
           title={toggleLabel}
         >
@@ -78,6 +87,11 @@ export const PasswordField: FC<PasswordFieldProps> = ({
           )}
         </button>
       </div>
+      {error ? (
+        <p id={errorId} className="auth-error-message" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

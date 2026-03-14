@@ -433,3 +433,15 @@
     max-width: min(240px, calc(100% - 24px));
   }
 }
+
+@media (min-width: 768px) {
+  .bird-map-view {
+    height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 76px);
+    height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 76px);
+  }
+
+  .bird-map-state {
+    height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 36px);
+    height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 36px);
+  }
+}

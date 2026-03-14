@@ -1,10 +1,9 @@
 import { useEffect, useState, type FC } from 'react'
-import { Circle, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { Circle, MapContainer, TileLayer, useMap } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 
 import { MAP_CONSTANTS } from '../constants/map.constants'
-import { MAP_LABELS } from '../constants/map.labels'
 import type { BirdZone } from '../types/map.types'
 import { BirdMapCenterControl } from './BirdMapCenterControl'
 import { BirdMapLegend } from './BirdMapLegend'
@@ -105,11 +104,7 @@ export const BirdMapView: FC<BirdMapViewProps> = ({ zones }) => {
           }}
           interactive={false}
           className="caldas-highlight"
-        >
-          <Tooltip permanent direction="center" opacity={1} className="caldas-highlight-label">
-            {MAP_LABELS.caldasRegion}
-          </Tooltip>
-        </Circle>
+        />
         <BirdMapCenterControl />
         <BirdZonesLayer zones={zones} />
       </MapContainer>

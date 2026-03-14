@@ -1,6 +1,7 @@
 import type { FC, ReactNode } from 'react'
 
 import '../auth.css'
+import { AuthSubmitButton } from './AuthSubmitButton'
 import { AuthLink } from './AuthLink'
 
 interface AuthLayoutProps {
@@ -9,10 +10,14 @@ interface AuthLayoutProps {
   readonly logoAlt: string
   readonly children: ReactNode
   readonly submitLabel: string
-  readonly onSubmit: () => void
+  readonly submittingLabel: string
+  readonly onSubmit: () => Promise<void>
   readonly footerPrefix: string
   readonly footerActionLabel: string
   readonly footerActionPath: string
+  readonly isSubmitting?: boolean
+  readonly submitDisabled?: boolean
+  readonly formError?: string | null
 }
 
 export const AuthLayout: FC<AuthLayoutProps> = ({
@@ -21,10 +26,14 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
   logoAlt,
   children,
   submitLabel,
+  submittingLabel,
   onSubmit,
   footerPrefix,
   footerActionLabel,
   footerActionPath,
+  isSubmitting = false,
+  submitDisabled = false,
+  formError = null,
 }) => {
   return (
     <main className="auth-screen">
@@ -47,13 +56,22 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
             className="auth-form"
             onSubmit={(event) => {
               event.preventDefault()
-              onSubmit()
+              void onSubmit()
             }}
           >
             {children}
-            <button className="auth-submit" type="submit">
-              {submitLabel}
-            </button>
+            {formError ? (
+              <p className="auth-error-message auth-error-message--form" role="alert">
+                {formError}
+              </p>
+            ) : null}
+            <AuthSubmitButton
+              label={submitLabel}
+              loadingLabel={submittingLabel}
+              isLoading={isSubmitting}
+              disabled={submitDisabled}
+              type="submit"
+            />
           </form>
         </div>
 
