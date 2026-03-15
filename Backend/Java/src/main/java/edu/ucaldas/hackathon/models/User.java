@@ -7,9 +7,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import edu.ucaldas.hackathon.DTOs.CreateUserDTO;
-import edu.ucaldas.hackathon.DTOs.GetUserDTO;
-import edu.ucaldas.hackathon.DTOs.UpdateUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.CreateUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.GetUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.UpdateUserDTO;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -77,7 +77,7 @@ public class SecurityFilter extends OncePerRequestFilter {
             var token = authorizationHeader.replace("Bearer ", ""); // duvidas sobre os 2 espacos
             var username = tokenService.getSubject(token);
             if (username != null) {
-                UserDetails user = userRepository.getUserByUsername(username);
+                UserDetails user = userRepository.findByUsername(username);
                 if (user != null) {
                     var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
