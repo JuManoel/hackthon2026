@@ -1,0 +1,447 @@
+.bird-map-view {
+  width: 100%;
+  height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 100px);
+  height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 100px);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-neutral-50);
+  position: relative;
+  z-index: 0;
+  font-family: var(--font-family-base);
+}
+
+.bird-map-canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 0;
+}
+
+.bird-map-view .leaflet-control-attribution {
+  display: none;
+}
+
+.bird-map-view .leaflet-control-zoom {
+  display: none;
+}
+
+.bird-map-view .leaflet-control,
+.bird-map-view .leaflet-tooltip,
+.bird-map-view .leaflet-popup-content,
+.bird-map-view .leaflet-popup-content-wrapper {
+  font-family: var(--font-family-base);
+}
+
+.bird-map-center-control {
+  position: absolute;
+  top: 38px;
+  right: 12px;
+  z-index: 520;
+}
+
+.bird-map-center-control .shared-button {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.bird-map-legend {
+  position: absolute;
+  top: 82px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 0;
+  z-index: 500;
+}
+
+.bird-map-legend-dropdown {
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.bird-map-legend-toggle {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  list-style: none;
+  color: var(--color-neutral-700);
+  opacity: 0.58;
+}
+
+.bird-map-legend-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.bird-map-legend-toggle::marker {
+  display: none;
+}
+
+.bird-map-legend-toggle:hover {
+  opacity: 0.72;
+}
+
+.bird-map-legend-panel {
+  align-self: flex-end;
+  margin-top: 8px;
+  border: 1px dashed var(--color-neutral-400);
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: var(--color-neutral-0);
+  box-shadow: 0 6px 16px rgba(31, 31, 31, 0.1);
+}
+
+.bird-map-legend-list {
+  margin-top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.caldas-highlight {
+  filter: drop-shadow(0 0 1px rgba(26, 26, 26, 0.14));
+}
+
+.caldas-highlight-label {
+  background: var(--color-neutral-0);
+  border: 1px solid var(--color-neutral-300);
+  color: var(--color-neutral-900);
+  box-shadow: 0 8px 18px rgba(31, 31, 31, 0.14);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: var(--text-label-sm-size);
+  line-height: var(--text-label-sm-line);
+  letter-spacing: 0;
+  font-weight: var(--text-label-md-weight);
+}
+
+.caldas-highlight-label::before {
+  display: none;
+}
+
+.bird-zone-point {
+  filter: drop-shadow(0 0 1px rgba(70, 0, 0, 0.45));
+}
+
+.bird-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--color-neutral-0);
+  border: 1px solid var(--color-neutral-300);
+}
+
+.bird-map-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.bird-map-legend-dot--low {
+  background: #8c8c8c;
+}
+
+.bird-map-legend-dot--medium {
+  background: #666666;
+}
+
+.bird-map-legend-dot--high {
+  background: #4a4a4a;
+}
+
+.bird-map-legend-dot--birds {
+  background: #b5161b;
+}
+
+.bird-map-legend-dot--live {
+  background: var(--color-brand-500);
+}
+
+.bird-map-legend-label {
+  color: var(--color-neutral-700);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: var(--text-label-md-weight);
+}
+
+.camera-popup-card {
+  min-width: 235px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.camera-popup-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: -2px;
+}
+
+.camera-popup-card-title {
+  margin: 0;
+  text-align: left;
+  color: var(--color-neutral-900);
+  font-size: var(--text-label-md-size);
+  line-height: var(--text-label-md-line);
+  font-weight: var(--text-label-md-weight);
+}
+
+.camera-popup-card-subtitle {
+  margin: 0;
+  text-align: left;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.camera-popup-card-summary {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.camera-popup-card-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.camera-popup-card-summary-label {
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--text-label-sm-weight);
+}
+
+.camera-popup-card-summary-value {
+  color: var(--color-neutral-800);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.camera-popup-card-summary-value--normal {
+  font-weight: var(--text-label-sm-weight);
+}
+
+.camera-popup-card-summary-value--strong {
+  font-weight: var(--text-label-md-weight);
+}
+
+.camera-popup-card-summary-value--accent {
+  color: var(--color-brand-500);
+  font-weight: var(--text-label-md-weight);
+}
+
+.camera-popup-card-summary-value--italic {
+  font-style: italic;
+}
+
+.camera-popup-card-details-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--text-label-md-weight);
+  margin-bottom: -2px;
+}
+
+.camera-popup-card-details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.camera-popup-card-details-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.camera-popup-card-details-primary,
+.camera-popup-card-details-secondary {
+  margin: 0;
+}
+
+.camera-popup-card-action {
+  display: flex;
+  justify-content: center;
+}
+
+.camera-popup-card-action .shared-button {
+  font-family: var(--font-family-base);
+}
+
+.bird-zone-tooltip-shell {
+  background: var(--color-neutral-0);
+  border: 1px dashed var(--color-neutral-400);
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(31, 31, 31, 0.1);
+  padding: 8px 10px;
+  color: var(--color-neutral-900);
+}
+
+.bird-zone-tooltip-shell::before {
+  border-top-color: var(--color-neutral-0);
+}
+
+.bird-zone-popup {
+  min-width: 235px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bird-zone-popup-camera {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-label-md-size);
+  line-height: var(--text-label-md-line);
+  font-weight: var(--text-label-md-weight);
+}
+
+.bird-zone-popup-location {
+  margin: 0;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.bird-zone-popup-summary {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bird-zone-popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.bird-zone-popup-row dt,
+.bird-zone-popup-row dd {
+  margin: 0;
+  color: var(--color-neutral-800);
+}
+
+.bird-zone-popup-species-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--text-label-md-weight);
+}
+
+.bird-zone-popup-species-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bird-zone-popup-species-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-neutral-700);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.bird-map-state {
+  width: 100%;
+  height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 48px);
+  height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 48px);
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bird-map-empty-card {
+  width: min(100%, 420px);
+  padding: 16px;
+}
+
+.bird-map-empty-text {
+  margin: 0;
+  color: var(--color-neutral-800);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  text-align: center;
+}
+
+.bird-zone-circle--live {
+  animation: bird-zone-live-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes bird-zone-live-pulse {
+  0% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.72;
+  }
+}
+
+@media (max-width: 768px) {
+  .bird-map-legend {
+    top: 82px;
+    right: 12px;
+    max-width: min(240px, calc(100% - 24px));
+  }
+}
+
+@media (min-width: 768px) {
+  .bird-map-view {
+    height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 76px);
+    height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 76px);
+  }
+
+  .bird-map-state {
+    height: calc(100svh - var(--home-header-height) - var(--home-footer-height) + 36px);
+    height: calc(100dvh - var(--home-header-height) - var(--home-footer-height) + 36px);
+  }
+}
