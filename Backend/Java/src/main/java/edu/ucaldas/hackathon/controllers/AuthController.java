@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import edu.ucaldas.hackathon.DTOs.LoginDTO;
-import edu.ucaldas.hackathon.DTOs.MeDTO;
-import edu.ucaldas.hackathon.DTOs.TokenDTO;
+import edu.ucaldas.hackathon.DTOs.login.LoginDTO;
+import edu.ucaldas.hackathon.DTOs.login.MeDTO;
+import edu.ucaldas.hackathon.DTOs.login.TokenDTO;
 import edu.ucaldas.hackathon.models.User;
 import edu.ucaldas.hackathon.services.TokenService;
 import org.springframework.web.bind.annotation.PostMapping;

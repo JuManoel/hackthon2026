@@ -2,14 +2,15 @@ package edu.ucaldas.hackathon.models;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import edu.ucaldas.hackathon.DTOs.CreateUserDTO;
-import edu.ucaldas.hackathon.DTOs.GetUserDTO;
-import edu.ucaldas.hackathon.DTOs.UpdateUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.CreateUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.GetUserDTO;
+import edu.ucaldas.hackathon.DTOs.users.UpdateUserDTO;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,7 +33,7 @@ import lombok.NoArgsConstructor;
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    private UUID id;
     @Column(unique = true)
     private String username;
 
