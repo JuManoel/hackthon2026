@@ -1,5 +1,7 @@
 package edu.ucaldas.hackathon.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,11 @@ public class CamaraService {
         var camara = new Camara(createCamaraDTO);
         camaraRepository.save(camara);
         return camara.toGetCamaraDTO();
+    }
+
+    public List<GetCamaraDTO> getAllCamaras() {
+        var camaras = camaraRepository.findAll();
+        return camaras.stream().map(Camara::toGetCamaraDTO).toList();
     }
 
     public GetCamaraDTO getCamaraById(String id) {

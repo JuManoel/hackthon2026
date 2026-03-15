@@ -21,14 +21,20 @@ public class SecurityConfiguration {
     @Autowired
     private SecurityFilter securityFilter;
 
-    
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.cors(cors -> cors.disable())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**").permitAll();
                     auth.requestMatchers("/auth/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/camara").hasRole("ADMIN");
+                    auth.requestMatchers(HttpMethod.PUT, "/camara/**").hasRole("ADMIN");
+                    auth.requestMatchers(HttpMethod.DELETE, "/camara/**").hasRole("ADMIN");
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

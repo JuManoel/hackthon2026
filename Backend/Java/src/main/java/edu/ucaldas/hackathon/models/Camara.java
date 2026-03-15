@@ -1,5 +1,7 @@
 package edu.ucaldas.hackathon.models;
 
+import java.math.BigDecimal;
+
 import edu.ucaldas.hackathon.DTOs.camara.CreateCamaraDTO;
 import edu.ucaldas.hackathon.DTOs.camara.GetCamaraDTO;
 import edu.ucaldas.hackathon.DTOs.camara.UpdateCamaraDTO;
@@ -27,12 +29,13 @@ public class Camara {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "UUID", updatable = false)
     private String id;
     private String name;
     @Column(name = "angle_xy", precision = 5, scale = 2)
-    private double angleXY;
+    private BigDecimal angleXY;
     @Column(name = "angle_xz", precision = 5, scale = 2)
-    private double angleXZ;
+    private BigDecimal angleXZ;
 
     @OneToOne(fetch = FetchType.EAGER, mappedBy = "camara", cascade = CascadeType.ALL, orphanRemoval = true)
     private Location location;

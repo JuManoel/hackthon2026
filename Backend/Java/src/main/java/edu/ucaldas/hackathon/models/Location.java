@@ -1,5 +1,7 @@
 package edu.ucaldas.hackathon.models;
 
+import java.math.BigDecimal;
+
 import edu.ucaldas.hackathon.DTOs.camara.CreateLocationDTO;
 import edu.ucaldas.hackathon.DTOs.camara.GetLocationDTO;
 import edu.ucaldas.hackathon.DTOs.camara.UpdateLocationDTO;
@@ -27,18 +29,19 @@ public class Location {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "UUID", updatable = false)
     private String id;
 
     private String region;
     private String address;
     @Column(precision = 10, scale = 8)
-    private double latitude;
+    private BigDecimal latitude;
     @Column(precision = 11, scale = 8)
-    private double longitude;
+    private BigDecimal longitude;
     @Column(precision = 5, scale = 2)
-    private double height;
+    private BigDecimal height;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "camera_id", unique = true, nullable = false)
+    @JoinColumn(name = "camera_id", unique = true, nullable = false, columnDefinition = "UUID")
     private Camara camara;
 
     public Location(CreateLocationDTO createLocationDTO) {

@@ -1,9 +1,11 @@
 package edu.ucaldas.hackathon.DTOs.camara;
 
+import java.math.BigDecimal;
+
 public record CreateCamaraDTO(
     String name,
-    double angleXY,
-    double angleXZ,
+    BigDecimal angleXY,
+    BigDecimal angleXZ,
     CreateLocationDTO location
 
 ) {

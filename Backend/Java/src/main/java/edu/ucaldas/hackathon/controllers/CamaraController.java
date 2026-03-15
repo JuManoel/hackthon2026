@@ -1,6 +1,7 @@
 package edu.ucaldas.hackathon.controllers;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 
 
+
 @RestController
 @RequestMapping("/camara")
 public class CamaraController {
@@ -30,6 +32,13 @@ public class CamaraController {
         var camara = camaraService.getCamaraById(id);
         return ResponseEntity.ok(camara);
     }
+
+    @GetMapping("")
+    public ResponseEntity<List<GetCamaraDTO>> getAllCamaras() {
+        var camaras = camaraService.getAllCamaras();
+        return ResponseEntity.ok(camaras);
+    }
+    
 
     @PostMapping("")
     public ResponseEntity<GetCamaraDTO> createCamara(@RequestBody CreateCamaraDTO createCamaraDTO) {

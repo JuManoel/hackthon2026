@@ -1,11 +1,13 @@
 package edu.ucaldas.hackathon.DTOs.camara;
 
+import java.math.BigDecimal;
+
 public record GetLocationDTO(
     String region,
     String address,
-    double latitude,
-    double longitude,
-    double height
+    BigDecimal latitude,
+    BigDecimal longitude,
+    BigDecimal height
 ) {
     
 }
