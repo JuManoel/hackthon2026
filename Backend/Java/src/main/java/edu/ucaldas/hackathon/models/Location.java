@@ -1,6 +1,7 @@
 package edu.ucaldas.hackathon.models;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import edu.ucaldas.hackathon.DTOs.camara.CreateLocationDTO;
 import edu.ucaldas.hackathon.DTOs.camara.GetLocationDTO;
@@ -30,7 +31,7 @@ public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "UUID", updatable = false)
-    private String id;
+    private UUID id;
 
     private String region;
     private String address;

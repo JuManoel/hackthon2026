@@ -1,7 +1,9 @@
 package edu.ucaldas.hackathon.DTOs.users;
 
+import java.util.UUID;
+
 public record GetUserDTO(
-    String id,
+    UUID id,
     String username,
     String role
 ) {

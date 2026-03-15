@@ -32,9 +32,9 @@ public class SecurityConfiguration {
                             "/v3/api-docs/**").permitAll();
                     auth.requestMatchers("/auth/**").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();
-                    auth.requestMatchers(HttpMethod.POST, "/camara").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.PUT, "/camara/**").hasRole("ADMIN");
-                    auth.requestMatchers(HttpMethod.DELETE, "/camara/**").hasRole("ADMIN");
+                    auth.requestMatchers(HttpMethod.POST, "/camara").hasAnyAuthority("ADMIN");
+                    auth.requestMatchers(HttpMethod.PUT, "/camara/**").hasAnyAuthority("ADMIN");
+                    auth.requestMatchers(HttpMethod.DELETE, "/camara/**").hasAnyAuthority("ADMIN");
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

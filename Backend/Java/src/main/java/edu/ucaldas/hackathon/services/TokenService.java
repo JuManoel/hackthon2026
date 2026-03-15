@@ -58,7 +58,7 @@ public class TokenService {
             return JWT.create()
                     .withIssuer("hackathon-2026")
                     .withSubject(user.getUsername())
-                    .withClaim("id", user.getId())
+                    .withClaim("id", user.getId().toString())
                     .withClaim("username", user.getUsername())
                     .withClaim("role", user.getRole().name())
                     .withExpiresAt(generateExpliration())
