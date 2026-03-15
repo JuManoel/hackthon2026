@@ -1,6 +1,7 @@
 package edu.ucaldas.hackathon.services;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,13 @@ public class CamaraService {
     }
 
     public GetCamaraDTO getCamaraById(String id) {
-        var camara = camaraRepository.findById(id).orElseThrow(() -> new RuntimeException("Camara not found"));
+        var camara = camaraRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("Camara not found"));
         return camara.toGetCamaraDTO();
     }
 
     @Transactional
     public GetCamaraDTO updateCamara(String id, UpdateCamaraDTO updateCamaraDTO) {
-        var camara = camaraRepository.findById(id).orElseThrow(() -> new RuntimeException("Camara not found"));
+        var camara = camaraRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("Camara not found"));
         camara.update(updateCamaraDTO);
         camaraRepository.save(camara);
         return camara.toGetCamaraDTO();
@@ -43,7 +44,7 @@ public class CamaraService {
 
     @Transactional
     public void deleteCamara(String id) {
-        var camara = camaraRepository.findById(id).orElseThrow(() -> new RuntimeException("Camara not found"));
+        var camara = camaraRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("Camara not found"));
         camaraRepository.delete(camara);
     }
 }

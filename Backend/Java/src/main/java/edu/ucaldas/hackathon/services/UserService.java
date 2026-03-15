@@ -1,5 +1,7 @@
 package edu.ucaldas.hackathon.services;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,13 +32,13 @@ public class UserService {
     }
 
     public GetUserDTO getUserById(String id) {
-        var user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        var user = userRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("User not found"));
         return user.toGetUserDTO();
     }
 
     @Transactional
     public GetUserDTO updateUser(String id, UpdateUserDTO updateUserDTO) {
-        var user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        var user = userRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("User not found"));
         user.update(updateUserDTO);
         if (updateUserDTO.password() != null && !updateUserDTO.password().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -47,7 +49,7 @@ public class UserService {
 
     @Transactional
     public void deleteUser(String id) {
-        var user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        var user = userRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("User not found"));
         userRepository.delete(user);
     }
 }
