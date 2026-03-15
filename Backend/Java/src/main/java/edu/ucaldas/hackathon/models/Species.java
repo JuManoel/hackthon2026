@@ -19,18 +19,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class Specie {
+public class Species {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "popular_name")
+    @Column(name = "popular_name", nullable = false, unique = true)
     private String popularName;
 
-    @Column(name = "scientific_name")
+    @Column(name = "scientific_name", nullable = false, unique = true)
     private String scientificName;
 
-    @Column(name = "yolo_label")
+    @Column(name = "yolo_label", nullable = false, unique = true)
     private String yoloLabel;
 
 }
