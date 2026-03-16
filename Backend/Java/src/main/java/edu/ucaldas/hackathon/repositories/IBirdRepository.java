@@ -14,14 +14,14 @@ import edu.ucaldas.hackathon.models.Bird;
 @Repository
 public interface IBirdRepository extends JpaRepository<Bird, UUID>{
 
-	List<Bird> findByCamara_Id(UUID camaraId);
+	List<Bird> findByCamera_Id(UUID cameraId);
 
 	List<Bird> findBySpecies_Id(UUID speciesId);
 
-	List<Bird> findByCamara_IdAndPhoto_TakenAtBetween(UUID camaraId, LocalDateTime startDate, LocalDateTime endDate);
+	List<Bird> findByCamera_IdAndPhoto_TakenAtBetween(UUID cameraId, LocalDateTime startDate, LocalDateTime endDate);
 
 	List<Bird> findByPhoto_TakenAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
-	@Query("SELECT DISTINCT b.camara.id FROM Bird b WHERE b.photo.takenAt >= :since")
-	List<UUID> findDistinctCamaraIdsDetectedSince(@Param("since") LocalDateTime since);
+	@Query("SELECT DISTINCT b.camera.id FROM Bird b WHERE b.photo.takenAt >= :since")
+	List<UUID> findDistinctCameraIdsDetectedSince(@Param("since") LocalDateTime since);
 }

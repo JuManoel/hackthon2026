@@ -1,4 +1,4 @@
-package edu.ucaldas.hackathon.DTOs.camara;
+package edu.ucaldas.hackathon.DTOs.camera;
 
 import java.math.BigDecimal;
 

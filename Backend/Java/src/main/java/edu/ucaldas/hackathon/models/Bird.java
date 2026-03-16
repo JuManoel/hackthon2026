@@ -41,6 +41,6 @@ public class Bird {
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "camera_id", nullable = false)
-    private Camara camara;
+    private Camera camera;
 
 }

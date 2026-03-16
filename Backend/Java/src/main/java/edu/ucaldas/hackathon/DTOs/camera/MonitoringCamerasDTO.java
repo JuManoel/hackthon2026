@@ -1,11 +1,11 @@
-package edu.ucaldas.hackathon.DTOs.camara;
+package edu.ucaldas.hackathon.DTOs.camera;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record MonitoringCamarasDTO(
+public record MonitoringCamerasDTO(
         LocalDateTime generatedAt,
         LocalDateTime windowStart,
-        List<UUID> activeCamaraIds) {
+        List<UUID> activeCameraIds) {
 }

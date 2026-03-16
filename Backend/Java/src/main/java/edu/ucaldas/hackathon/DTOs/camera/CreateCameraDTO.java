@@ -1,13 +1,13 @@
-package edu.ucaldas.hackathon.DTOs.camara;
+package edu.ucaldas.hackathon.DTOs.camera;
 
 import java.math.BigDecimal;
 
-public record CreateCamaraDTO(
+public record CreateCameraDTO(
     String name,
     BigDecimal angleXY,
     BigDecimal angleXZ,
     CreateLocationDTO location
 
 ) {
-    
+
 }

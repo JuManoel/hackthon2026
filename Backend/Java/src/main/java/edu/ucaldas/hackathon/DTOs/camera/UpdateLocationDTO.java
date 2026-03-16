@@ -1,8 +1,8 @@
-package edu.ucaldas.hackathon.DTOs.camara;
+package edu.ucaldas.hackathon.DTOs.camera;
 
 import java.math.BigDecimal;
 
-public record CreateLocationDTO(
+public record UpdateLocationDTO(
     String region,
     String address,
     BigDecimal latitude,

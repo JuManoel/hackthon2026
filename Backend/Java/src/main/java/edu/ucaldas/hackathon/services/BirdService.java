@@ -28,18 +28,18 @@ public class BirdService {
 		return birdRepository.findAll().stream().map(this::toGetBirdDTO).toList();
 	}
 
-	public List<GetBirdDTO> getBirdsByCamara(String camaraId) {
-		return birdRepository.findByCamara_Id(UUID.fromString(camaraId)).stream().map(this::toGetBirdDTO).toList();
+	public List<GetBirdDTO> getBirdsByCamera(String cameraId) {
+		return birdRepository.findByCamera_Id(UUID.fromString(cameraId)).stream().map(this::toGetBirdDTO).toList();
 	}
 
 	public List<GetBirdDTO> getBirdsBySpecies(String speciesId) {
 		return birdRepository.findBySpecies_Id(UUID.fromString(speciesId)).stream().map(this::toGetBirdDTO).toList();
 	}
 
-	public List<GetBirdDTO> getBirdsByCamaraAndDateRange(String camaraId, LocalDateTime startDate, LocalDateTime endDate) {
+	public List<GetBirdDTO> getBirdsByCameraAndDateRange(String cameraId, LocalDateTime startDate, LocalDateTime endDate) {
 		validateDateRange(startDate, endDate);
 		return birdRepository
-				.findByCamara_IdAndPhoto_TakenAtBetween(UUID.fromString(camaraId), startDate, endDate)
+				.findByCamera_IdAndPhoto_TakenAtBetween(UUID.fromString(cameraId), startDate, endDate)
 				.stream()
 				.map(this::toGetBirdDTO)
 				.toList();
@@ -72,6 +72,6 @@ public class BirdService {
 						bird.getPhoto().getId(),
 						bird.getPhoto().getUrl(),
 						bird.getPhoto().getTakenAt()),
-				bird.getCamara().toGetCamaraDTO());
+				bird.getCamera().toGetCameraDTO());
 	}
 }

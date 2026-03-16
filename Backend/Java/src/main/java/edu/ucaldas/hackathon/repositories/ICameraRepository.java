@@ -5,9 +5,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import edu.ucaldas.hackathon.models.Camara;
+import edu.ucaldas.hackathon.models.Camera;
 
 @Repository
-public interface ICamaraRepository extends JpaRepository<Camara, UUID> {
-    
+public interface ICameraRepository extends JpaRepository<Camera, UUID> {
+
 }

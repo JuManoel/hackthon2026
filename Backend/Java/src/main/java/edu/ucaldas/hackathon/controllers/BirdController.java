@@ -32,9 +32,9 @@ public class BirdController {
 		return ResponseEntity.ok(birdService.getAllBirds());
 	}
 
-	@GetMapping("/camara/{camaraId}")
-	public ResponseEntity<List<GetBirdDTO>> getBirdsByCamara(@PathVariable String camaraId) {
-		return ResponseEntity.ok(birdService.getBirdsByCamara(camaraId));
+	@GetMapping("/camera/{cameraId}")
+	public ResponseEntity<List<GetBirdDTO>> getBirdsByCamera(@PathVariable String cameraId) {
+		return ResponseEntity.ok(birdService.getBirdsByCamera(cameraId));
 	}
 
 	@GetMapping("/species/{speciesId}")
@@ -42,22 +42,18 @@ public class BirdController {
 		return ResponseEntity.ok(birdService.getBirdsBySpecies(speciesId));
 	}
 
-	@GetMapping("/camara/{camaraId}/range")
-	public ResponseEntity<List<GetBirdDTO>> getBirdsByCamaraAndDateRange(
-			@PathVariable String camaraId,
+	@GetMapping("/camera/{cameraId}/range")
+	public ResponseEntity<List<GetBirdDTO>> getBirdsByCameraAndDateRange(
+			@PathVariable String cameraId,
 			@RequestParam(value = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-			@RequestParam(value = "stard_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime stardDate,
 			@RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-		var effectiveStartDate = startDate != null ? startDate : stardDate;
-		return ResponseEntity.ok(birdService.getBirdsByCamaraAndDateRange(camaraId, effectiveStartDate, endDate));
+		return ResponseEntity.ok(birdService.getBirdsByCameraAndDateRange(cameraId, startDate, endDate));
 	}
 
 	@GetMapping("/range")
 	public ResponseEntity<List<GetBirdDTO>> getBirdsByDateRange(
 			@RequestParam(value = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
-			@RequestParam(value = "stard_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime stardDate,
-			@RequestParam("end_date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-		var effectiveStartDate = startDate != null ? startDate : stardDate;
-		return ResponseEntity.ok(birdService.getBirdsByDateRange(effectiveStartDate, endDate));
+			@RequestParam(value = "end_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+		return ResponseEntity.ok(birdService.getBirdsByDateRange(startDate, endDate));
 	}
 }

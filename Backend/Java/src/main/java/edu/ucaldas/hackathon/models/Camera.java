@@ -3,9 +3,9 @@ package edu.ucaldas.hackathon.models;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import edu.ucaldas.hackathon.DTOs.camara.CreateCamaraDTO;
-import edu.ucaldas.hackathon.DTOs.camara.GetCamaraDTO;
-import edu.ucaldas.hackathon.DTOs.camara.UpdateCamaraDTO;
+import edu.ucaldas.hackathon.DTOs.camera.CreateCameraDTO;
+import edu.ucaldas.hackathon.DTOs.camera.GetCameraDTO;
+import edu.ucaldas.hackathon.DTOs.camera.UpdateCameraDTO;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,12 +21,12 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "camaras")
+@Table(name = "cameras")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class Camara {
+public class Camera {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -38,18 +38,18 @@ public class Camara {
     @Column(name = "angle_xz", precision = 5, scale = 2)
     private BigDecimal angleXZ;
 
-    @OneToOne(fetch = FetchType.EAGER, mappedBy = "camara", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(fetch = FetchType.EAGER, mappedBy = "camera", cascade = CascadeType.ALL, orphanRemoval = true)
     private Location location;
 
-    public Camara(CreateCamaraDTO createCamaraDTO) {
-        this.name = createCamaraDTO.name();
-        this.angleXY = createCamaraDTO.angleXY();
-        this.angleXZ = createCamaraDTO.angleXZ();
-        this.setLocation(new Location(createCamaraDTO.location()));
+    public Camera(CreateCameraDTO createCameraDTO) {
+        this.name = createCameraDTO.name();
+        this.angleXY = createCameraDTO.angleXY();
+        this.angleXZ = createCameraDTO.angleXZ();
+        this.setLocation(new Location(createCameraDTO.location()));
     }
 
-    public GetCamaraDTO toGetCamaraDTO() {
-        return new GetCamaraDTO(
+    public GetCameraDTO toGetCameraDTO() {
+        return new GetCameraDTO(
                 this.id,
                 this.name,
                 this.angleXY,
@@ -57,17 +57,17 @@ public class Camara {
                 this.location.toGetLocationDTO());
     }
 
-    public void update(UpdateCamaraDTO updateCamaraDTO) {
-        this.name = updateCamaraDTO.name();
-        this.angleXY = updateCamaraDTO.angleXY();
-        this.angleXZ = updateCamaraDTO.angleXZ();
-        this.location.update(updateCamaraDTO.location());
+    public void update(UpdateCameraDTO updateCameraDTO) {
+        this.name = updateCameraDTO.name();
+        this.angleXY = updateCameraDTO.angleXY();
+        this.angleXZ = updateCameraDTO.angleXZ();
+        this.location.update(updateCameraDTO.location());
     }
 
     public void setLocation(Location location) {
         this.location = location;
         if (location != null) {
-            location.setCamara(this);
+            location.setCamera(this);
         }
     }
 }

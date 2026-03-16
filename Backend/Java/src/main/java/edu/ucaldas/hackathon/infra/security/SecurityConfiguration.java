@@ -34,10 +34,11 @@ public class SecurityConfiguration {
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers("/auth/**").permitAll();
                     auth.requestMatchers("/ws/**", "/ws").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/camera/monitoring/status").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();
-                    auth.requestMatchers(HttpMethod.POST, "/camara").hasAnyAuthority("ADMIN");
-                    auth.requestMatchers(HttpMethod.PUT, "/camara/**").hasAnyAuthority("ADMIN");
-                    auth.requestMatchers(HttpMethod.DELETE, "/camara/**").hasAnyAuthority("ADMIN");
+                    auth.requestMatchers(HttpMethod.POST, "/camera").hasAnyAuthority("ADMIN");
+                    auth.requestMatchers(HttpMethod.PUT, "/camera/**").hasAnyAuthority("ADMIN");
+                    auth.requestMatchers(HttpMethod.DELETE, "/camera/**").hasAnyAuthority("ADMIN");
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
