@@ -26,3 +26,9 @@
 .shared-button--primary:hover {
   background: var(--color-neutral-800);
 }
+
+.shared-button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  pointer-events: none;
+}

@@ -67,22 +67,64 @@
   padding: 20px 16px 96px;
 }
 
+.home-shell-content--top {
+  justify-content: flex-center;
+  padding-top: 0;
+}
+
 .home-sandbox-loader-wrap {
   width: 100%;
   display: flex;
   justify-content: center;
 }
 
-.settings-page-wrap,
-.cameras-page-wrap {
+.settings-page-wrap {
   width: min(100%, 680px);
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.settings-page-title,
-.cameras-management-title {
+.cameras-page-wrap {
+  width: min(100%, 680px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-page-title {
+  margin: 0;
+  text-align: center;
+  color: var(--color-neutral-900);
+  font-size: var(--text-title-2-size);
+  line-height: var(--text-title-2-line);
+  font-weight: var(--text-title-2-weight);
+}
+
+.settings-card {
+  padding: 16px;
+}
+
+.cameras-page-header {
+  position: sticky;
+  top: var(--home-header-height);
+  z-index: 1;
+  background: var(--color-neutral-100);
+  padding: 12px 0;
+}
+
+.cameras-page-header--list {
+  text-align: center;
+}
+
+.cameras-page-header--form {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.cameras-page-title {
   margin: 0;
   color: var(--color-neutral-900);
   font-size: var(--text-title-2-size);
@@ -90,13 +132,32 @@
   font-weight: var(--text-title-2-weight);
 }
 
-.settings-page-title {
+.cameras-page-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
 }
 
-.settings-card,
-.cameras-management-card {
-  padding: 16px;
+.cameras-page-description {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--color-neutral-700);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+}
+
+.cameras-page-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cameras-page-header-end {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .settings-card-title {
@@ -143,15 +204,183 @@
   width: 100%;
 }
 
-.cameras-management-description {
-  margin: 8px 0 0;
+.cameras-list-card,
+.cameras-form-card,
+.cameras-feedback-card {
+  padding: 16px;
+}
+
+.cameras-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cameras-list-title,
+.cameras-form-title,
+.cameras-feedback-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-label-lg-size);
+  line-height: var(--text-label-lg-line);
+  font-weight: var(--text-label-lg-weight);
+}
+
+.cameras-list {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.camera-list-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-neutral-300);
+  background: var(--color-neutral-0);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.camera-list-item:hover {
+  border-color: var(--color-neutral-400);
+  box-shadow: 0 2px 8px rgba(31, 31, 31, 0.07);
+}
+
+.camera-list-item-preview {
+  width: 56px;
+  height: 42px;
+}
+
+.camera-list-item-preview-image,
+.camera-list-item-preview-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
+
+.camera-list-item-preview-image {
+  object-fit: cover;
+  display: block;
+}
+
+.camera-list-item-preview-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-neutral-500);
+  border: 1px dashed var(--color-neutral-400);
+  background: var(--color-neutral-100);
+}
+
+.camera-list-item-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.camera-list-item-title {
+  margin: 0;
+  color: var(--color-neutral-900);
+  font-size: var(--text-label-md-size);
+  line-height: var(--text-label-md-line);
+  font-weight: var(--text-label-md-weight);
+}
+
+.camera-list-item-subtitle {
+  margin: 0;
+  color: var(--color-neutral-700);
+  font-size: var(--text-label-sm-size);
+  line-height: var(--text-label-sm-line);
+  text-wrap: balance;
+}
+
+.camera-list-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.camera-list-item-actions .shared-button {
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cameras-feedback-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cameras-feedback-card--error {
+  border-color: color-mix(in srgb, var(--color-brand-500) 36%, var(--color-neutral-300));
+}
+
+.cameras-feedback-text {
+  margin: 0;
   color: var(--color-neutral-700);
   font-size: var(--text-body-size);
   line-height: var(--text-body-line);
 }
 
-.cameras-management-actions {
-  margin-top: 14px;
+.cameras-loading-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cameras-form-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.cameras-form-field {
+  display: grid;
+  gap: 6px;
+}
+
+.cameras-form-label {
+  color: var(--color-neutral-800);
+  font-size: var(--text-label-sm-size);
+  line-height: var(--text-label-sm-line);
+  font-weight: var(--text-label-sm-weight);
+}
+
+.cameras-form-input {
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 8px;
+  height: 38px;
+  padding: 0 10px;
+  font-family: var(--font-family-base);
+  color: var(--color-neutral-900);
+  background: var(--color-neutral-0);
+  font-size: var(--text-label-md-size);
+  line-height: var(--text-label-md-line);
+}
+
+.cameras-form-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand-500) 30%, transparent);
+  outline-offset: 1px;
+}
+
+.cameras-form-error {
+  margin: 0;
+  color: var(--color-brand-500);
+  font-size: var(--text-label-sm-size);
+  line-height: var(--text-label-sm-line);
+}
+
+.cameras-form-actions {
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -317,6 +546,22 @@
 }
 
 @media (min-width: 768px) {
+  .camera-list-item-preview {
+    width: 108px;
+    height: 72px;
+  }
+
+  .cameras-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cameras-form-field:first-child,
+  .cameras-form-field:nth-child(5),
+  .cameras-form-error,
+  .cameras-form-actions {
+    grid-column: 1 / -1;
+  }
+
   .home-shell {
     --home-footer-height: 84px;
     align-items: center;
