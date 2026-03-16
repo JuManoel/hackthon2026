@@ -1,0 +1,12 @@
+FROM postgres:15-alpine
+
+# Default development values (override with -e in docker run).
+ENV POSTGRES_DB=hackathon
+ENV POSTGRES_USER=postgres
+
+# Set POSTGRES_PASSWORD at runtime, for example with `-e POSTGRES_PASSWORD=...`.
+
+EXPOSE 5432
+
+# This script runs automatically on first container startup.
+COPY database/init.sql /docker-entrypoint-initdb.d/001-init.sql
