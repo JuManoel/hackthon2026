@@ -1,6 +1,7 @@
 .home-shell {
   --home-header-height: 56px;
   --home-footer-height: 82px;
+  --cameras-content-fixed-height: 540px;
   min-height: 100svh;
   width: 100%;
   display: flex;
@@ -68,14 +69,9 @@
 }
 
 .home-shell-content--top {
-  justify-content: flex-center;
-  padding-top: 0;
-}
-
-.home-sandbox-loader-wrap {
-  width: 100%;
-  display: flex;
   justify-content: center;
+  align-items: flex-start;
+  padding-top: 48px;
 }
 
 .settings-page-wrap {
@@ -87,9 +83,37 @@
 
 .cameras-page-wrap {
   width: min(100%, 680px);
+  flex: 1;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.cameras-page-content {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.cameras-page-content > .cameras-list-card,
+.cameras-page-content > .cameras-feedback-card {
+  width: 100%;
+}
+
+.cameras-page-intro {
+  position: sticky;
+  top: var(--home-header-height);
+  z-index: 1;
+  background: var(--color-neutral-100);
+  padding: 4px 0 8px;
+  display: grid;
+  gap: 6px;
+  text-align: center;
 }
 
 .settings-page-title {
@@ -110,11 +134,7 @@
   top: var(--home-header-height);
   z-index: 1;
   background: var(--color-neutral-100);
-  padding: 12px 0;
-}
-
-.cameras-page-header--list {
-  text-align: center;
+  padding: 6px 0;
 }
 
 .cameras-page-header--form {
@@ -132,27 +152,13 @@
   font-weight: var(--text-title-2-weight);
 }
 
-.cameras-page-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-}
-
 .cameras-page-description {
   margin: 0;
   max-width: 56ch;
   color: var(--color-neutral-700);
   font-size: var(--text-body-size);
   line-height: var(--text-body-line);
-}
-
-.cameras-page-actions {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-self: center;
 }
 
 .cameras-page-header-end {
@@ -210,11 +216,35 @@
   padding: 16px;
 }
 
+.cameras-list-card,
+.cameras-feedback-card--empty,
+.cameras-feedback-card--error,
+.cameras-feedback-card--loading {
+  height: var(--cameras-content-fixed-height);
+}
+
+.cameras-list-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .cameras-list-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.cameras-list-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cameras-list-header-actions .shared-button {
+  min-width: 36px;
+  width: 36px;
+  padding-inline: 0;
 }
 
 .cameras-list-title,
@@ -234,6 +264,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .camera-list-item {
@@ -321,8 +354,37 @@
   gap: 10px;
 }
 
+.cameras-feedback-card--empty {
+  justify-content: center;
+}
+
+.cameras-feedback-card--loading {
+  align-items: center;
+  justify-content: center;
+}
+
 .cameras-feedback-card--error {
+  align-items: center;
+  justify-content: center;
   border-color: color-mix(in srgb, var(--color-brand-500) 36%, var(--color-neutral-300));
+}
+
+.cameras-feedback-card--error .cameras-feedback-text {
+  text-align: center;
+}
+
+.cameras-feedback-card--error .cameras-feedback-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand-500);
+  margin-bottom: 4px;
+}
+
+.cameras-feedback-card--error .shared-button {
+  width: auto;
+  min-width: 144px;
+  padding-inline: 16px;
 }
 
 .cameras-feedback-text {
@@ -333,9 +395,20 @@
 }
 
 .cameras-loading-wrap {
-  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  margin-inline: auto;
+}
+
+.cameras-loading-message {
+  opacity: 0.72;
 }
 
 .cameras-form-grid {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FC, type SyntheticEvent } from 'react'
+import { ShieldAlert } from 'lucide-react'
 
 import { labels } from '../../../constants/labels'
 import { Spinner } from '../../../components/Spinner'
@@ -275,61 +276,54 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
 
         {!isFormVisible ? (
           <>
-            <header className="cameras-page-header cameras-page-header--list">
+            <header className="cameras-page-intro">
               <h1 className="cameras-page-title">{labels.camerasManagementTitle}</h1>
             </header>
 
-            <div className="cameras-page-summary">
-              <p className="cameras-page-description">
-                {isAdmin ? labels.camerasAdminDescription : labels.camerasGuideDescription}
-              </p>
-              {isAdmin ? (
-                <div className="cameras-page-actions">
-                  <Button type="button" variant="primary" disabled={isMutating} onClick={handleOpenCreateForm}>
-                    {labels.camerasCreateAction}
+            <div className="cameras-page-content">
+              {error ? (
+                <Card className="cameras-feedback-card cameras-feedback-card--error">
+                  <span className="cameras-feedback-icon" aria-hidden="true">
+                    <ShieldAlert size={44} strokeWidth={1.8} />
+                  </span>
+                  <p className="cameras-feedback-text">{error}</p>
+                  <Button type="button" disabled={isLoading || isMutating} onClick={() => void loadCameras()}>
+                    {labels.camerasRetryAction}
                   </Button>
-                </div>
+                </Card>
+              ) : null}
+
+              {isLoading ? (
+                <Card className="cameras-feedback-card cameras-feedback-card--loading">
+                  <div className="cameras-loading-wrap" aria-label={labels.camerasLoaderAria}>
+                    <Spinner size="md" tone="dark" />
+                    <p className="cameras-feedback-text cameras-loading-message">
+                      {isMutating ? labels.camerasRefreshingData : labels.camerasLoadingData}
+                    </p>
+                  </div>
+                </Card>
+              ) : null}
+
+              {!isLoading && cameraListItems.length > 0 ? (
+                <CameraList
+                  cameras={cameraListItems}
+                  isAdmin={isAdmin}
+                  isBusy={isMutating}
+                  onCreate={handleOpenCreateForm}
+                  onEdit={handleOpenEditForm}
+                  onDelete={(cameraId) => {
+                    void handleDeleteCamera(cameraId)
+                  }}
+                />
+              ) : null}
+
+              {!isLoading && !error && cameraListItems.length === 0 ? (
+                <Card className="cameras-feedback-card cameras-feedback-card--empty">
+                  <p className="cameras-feedback-title">{labels.camerasEmptyTitle}</p>
+                  <p className="cameras-feedback-text">{labels.camerasEmptyDescription}</p>
+                </Card>
               ) : null}
             </div>
-
-            {error ? (
-              <Card className="cameras-feedback-card cameras-feedback-card--error">
-                <p className="cameras-feedback-text">{error}</p>
-                <Button type="button" disabled={isLoading || isMutating} onClick={() => void loadCameras()}>
-                  {labels.camerasRetryAction}
-                </Button>
-              </Card>
-            ) : null}
-
-            {isLoading ? (
-              <Card className="cameras-feedback-card">
-                <div className="cameras-loading-wrap" aria-label={labels.camerasLoaderAria}>
-                  <Spinner size="md" tone="dark" />
-                  <p className="cameras-feedback-text">
-                    {isMutating ? labels.camerasRefreshingData : labels.camerasLoadingData}
-                  </p>
-                </div>
-              </Card>
-            ) : null}
-
-            {!isLoading && cameraListItems.length > 0 ? (
-              <CameraList
-                cameras={cameraListItems}
-                isAdmin={isAdmin}
-                isBusy={isMutating}
-                onEdit={handleOpenEditForm}
-                onDelete={(cameraId) => {
-                  void handleDeleteCamera(cameraId)
-                }}
-              />
-            ) : null}
-
-            {!isLoading && !error && cameraListItems.length === 0 ? (
-              <Card className="cameras-feedback-card cameras-feedback-card--empty">
-                <p className="cameras-feedback-title">{labels.camerasEmptyTitle}</p>
-                <p className="cameras-feedback-text">{labels.camerasEmptyDescription}</p>
-              </Card>
-            ) : null}
           </>
         ) : null}
 

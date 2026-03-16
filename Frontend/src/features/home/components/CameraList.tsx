@@ -1,4 +1,4 @@
-import { Camera, Eye, Pencil, Trash2 } from 'lucide-react'
+import { Camera, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useMemo, useState, type FC } from 'react'
 
 import { labels } from '../../../constants/labels'
@@ -11,6 +11,7 @@ interface CameraListProps {
   readonly cameras: readonly CameraListItem[]
   readonly isAdmin: boolean
   readonly isBusy?: boolean
+  readonly onCreate?: () => void
   readonly onEdit: (cameraId: string) => void
   readonly onDelete: (cameraId: string) => void
 }
@@ -44,14 +45,35 @@ const CameraPreview: FC<CameraPreviewProps> = ({ cameraName, previewUrl }) => {
   )
 }
 
-export const CameraList: FC<CameraListProps> = ({ cameras, isAdmin, isBusy = false, onEdit, onDelete }) => {
+export const CameraList: FC<CameraListProps> = ({
+  cameras,
+  isAdmin,
+  isBusy = false,
+  onCreate,
+  onEdit,
+  onDelete,
+}) => {
   const countLabel = useMemo(() => labels.camerasCountLabel(cameras.length), [cameras.length])
 
   return (
     <Card className="cameras-list-card">
       <div className="cameras-list-header">
         <h2 className="cameras-list-title">{labels.camerasListTitle}</h2>
-        <Badge label={countLabel} />
+        <div className="cameras-list-header-actions">
+          <Badge label={countLabel} />
+          {isAdmin ? (
+            <Button
+              type="button"
+              variant="primary"
+              disabled={isBusy}
+              title={labels.camerasCreateAction}
+              aria-label={labels.camerasCreateAction}
+              onClick={onCreate}
+            >
+              <Plus size={15} />
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       <ul className="cameras-list" aria-label={labels.camerasListAria}>
