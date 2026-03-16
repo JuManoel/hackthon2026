@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                             "/v3/api-docs/**").permitAll();
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     auth.requestMatchers("/auth/**").permitAll();
+                    auth.requestMatchers("/ws/**", "/ws").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/camara").hasAnyAuthority("ADMIN");
                     auth.requestMatchers(HttpMethod.PUT, "/camara/**").hasAnyAuthority("ADMIN");
