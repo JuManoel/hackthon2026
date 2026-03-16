@@ -1,9 +1,10 @@
 package edu.ucaldas.hackathon.services;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import edu.ucaldas.hackathon.DTOs.photo.CreatePhotoDTO;
@@ -25,8 +26,8 @@ public class PhotoService {
         return toGetPhotoDTO(photo);
     }
 
-    public List<GetPhotoDTO> getAllPhotos() {
-        return photoRepository.findAll().stream().map(this::toGetPhotoDTO).toList();
+    public Page<GetPhotoDTO> getAllPhotos(Pageable pageable) {
+        return photoRepository.findAll(pageable).map(this::toGetPhotoDTO);
     }
 
     public GetPhotoDTO createPhoto(CreatePhotoDTO createPhotoDTO) {

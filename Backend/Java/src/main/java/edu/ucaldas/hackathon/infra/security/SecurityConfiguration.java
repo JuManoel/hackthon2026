@@ -32,7 +32,7 @@ public class SecurityConfiguration {
                             "/swagger-ui/**",
                             "/v3/api-docs/**").permitAll();
                     auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-                    auth.requestMatchers("/auth/**").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/auth/login").permitAll();
                     auth.requestMatchers("/ws/**", "/ws").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/camera/monitoring/status").permitAll();
                     auth.requestMatchers(HttpMethod.POST, "/user").permitAll();

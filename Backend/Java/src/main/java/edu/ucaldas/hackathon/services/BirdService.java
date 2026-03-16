@@ -5,13 +5,17 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import edu.ucaldas.hackathon.DTOs.bird.CreateBirdDTO;
 import edu.ucaldas.hackathon.DTOs.bird.GetBirdDTO;
-import edu.ucaldas.hackathon.DTOs.bird.GetPhotoDTO;
-import edu.ucaldas.hackathon.DTOs.bird.GetSpeciesDTO;
+import edu.ucaldas.hackathon.DTOs.photo.GetPhotoDTO;
+import edu.ucaldas.hackathon.DTOs.species.GetSpeciesDTO;
 import edu.ucaldas.hackathon.DTOs.bird.UpdateBirdDTO;
+import edu.ucaldas.hackathon.infra.exception.DataNotFound;
+import edu.ucaldas.hackathon.infra.exception.MissingData;
 import edu.ucaldas.hackathon.models.Bird;
 import edu.ucaldas.hackathon.repositories.IBirdRepository;
 import edu.ucaldas.hackathon.repositories.ICameraRepository;
@@ -34,12 +38,12 @@ public class BirdService {
 	private ICameraRepository cameraRepository;
 
 	public GetBirdDTO getBirdById(String id) {
-		var bird = birdRepository.findById(UUID.fromString(id)).orElseThrow(() -> new RuntimeException("Bird not found"));
+		var bird = birdRepository.findById(UUID.fromString(id)).orElseThrow(() -> new DataNotFound("Bird not found"));
 		return toGetBirdDTO(bird);
 	}
 
-	public List<GetBirdDTO> getAllBirds() {
-		return birdRepository.findAll().stream().map(this::toGetBirdDTO).toList();
+	public Page<GetBirdDTO> getAllBirds(Pageable pageable) {
+		return birdRepository.findAll(pageable).map(this::toGetBirdDTO);
 	}
 
 	public List<GetBirdDTO> getBirdsByCamera(String cameraId) {
@@ -66,11 +70,11 @@ public class BirdService {
 
 	public GetBirdDTO createBird(CreateBirdDTO createBirdDTO) {
 		var species = speciesRepository.findById(UUID.fromString(createBirdDTO.speciesId()))
-				.orElseThrow(() -> new RuntimeException("Species not found"));
+				.orElseThrow(() -> new DataNotFound("Species not found"));
 		var photo = photoRepository.findById(UUID.fromString(createBirdDTO.photoId()))
-				.orElseThrow(() -> new RuntimeException("Photo not found"));
+				.orElseThrow(() -> new DataNotFound("Photo not found"));
 		var camera = cameraRepository.findById(UUID.fromString(createBirdDTO.cameraId()))
-				.orElseThrow(() -> new RuntimeException("Camera not found"));
+				.orElseThrow(() -> new DataNotFound("Camera not found"));
 
 		var bird = new Bird();
 		bird.setProbabilityYolo(createBirdDTO.probabilityYolo());
@@ -84,13 +88,13 @@ public class BirdService {
 
 	public GetBirdDTO updateBird(String id, UpdateBirdDTO updateBirdDTO) {
 		var bird = birdRepository.findById(UUID.fromString(id))
-				.orElseThrow(() -> new RuntimeException("Bird not found"));
+				.orElseThrow(() -> new DataNotFound("Bird not found"));
 		var species = speciesRepository.findById(UUID.fromString(updateBirdDTO.speciesId()))
-				.orElseThrow(() -> new RuntimeException("Species not found"));
+				.orElseThrow(() -> new DataNotFound("Species not found"));
 		var photo = photoRepository.findById(UUID.fromString(updateBirdDTO.photoId()))
-				.orElseThrow(() -> new RuntimeException("Photo not found"));
+				.orElseThrow(() -> new DataNotFound("Photo not found"));
 		var camera = cameraRepository.findById(UUID.fromString(updateBirdDTO.cameraId()))
-				.orElseThrow(() -> new RuntimeException("Camera not found"));
+				.orElseThrow(() -> new DataNotFound("Camera not found"));
 
 		bird.setProbabilityYolo(updateBirdDTO.probabilityYolo());
 		bird.setSpecies(species);
@@ -103,16 +107,16 @@ public class BirdService {
 
 	public void deleteBird(String id) {
 		var bird = birdRepository.findById(UUID.fromString(id))
-				.orElseThrow(() -> new RuntimeException("Bird not found"));
+				.orElseThrow(() -> new DataNotFound("Bird not found"));
 		birdRepository.delete(bird);
 	}
 
 	private void validateDateRange(LocalDateTime startDate, LocalDateTime endDate) {
 		if (startDate == null || endDate == null) {
-			throw new RuntimeException("start_date and end_date are required");
+			throw new MissingData("start_date and end_date are required");
 		}
 		if (startDate.isAfter(endDate)) {
-			throw new RuntimeException("start_date must be before or equal to end_date");
+			throw new IllegalArgumentException("start_date must be before or equal to end_date");
 		}
 	}
 

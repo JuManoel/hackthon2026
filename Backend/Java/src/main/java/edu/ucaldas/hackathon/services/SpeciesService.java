@@ -1,9 +1,10 @@
 package edu.ucaldas.hackathon.services;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import edu.ucaldas.hackathon.DTOs.species.CreateSpeciesDTO;
@@ -25,8 +26,8 @@ public class SpeciesService {
         return toGetSpeciesDTO(species);
     }
 
-    public List<GetSpeciesDTO> getAllSpecies() {
-        return speciesRepository.findAll().stream().map(this::toGetSpeciesDTO).toList();
+    public Page<GetSpeciesDTO> getAllSpecies(Pageable pageable) {
+        return speciesRepository.findAll(pageable).map(this::toGetSpeciesDTO);
     }
 
     public GetSpeciesDTO createSpecies(CreateSpeciesDTO createSpeciesDTO) {
