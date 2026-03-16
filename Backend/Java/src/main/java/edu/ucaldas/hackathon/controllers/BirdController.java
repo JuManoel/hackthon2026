@@ -21,6 +21,7 @@ import edu.ucaldas.hackathon.DTOs.bird.CreateBirdDTO;
 import edu.ucaldas.hackathon.DTOs.bird.GetBirdDTO;
 import edu.ucaldas.hackathon.DTOs.bird.UpdateBirdDTO;
 import edu.ucaldas.hackathon.services.BirdService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/bird")
@@ -65,13 +66,13 @@ public class BirdController {
 	}
 
 	@PostMapping("")
-	public ResponseEntity<GetBirdDTO> createBird(@RequestBody CreateBirdDTO createBirdDTO) {
+	public ResponseEntity<GetBirdDTO> createBird(@Valid @RequestBody CreateBirdDTO createBirdDTO) {
 		var bird = birdService.createBird(createBirdDTO);
 		return ResponseEntity.created(URI.create("/bird/" + bird.id())).body(bird);
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<GetBirdDTO> updateBird(@PathVariable String id, @RequestBody UpdateBirdDTO updateBirdDTO) {
+	public ResponseEntity<GetBirdDTO> updateBird(@PathVariable String id, @Valid @RequestBody UpdateBirdDTO updateBirdDTO) {
 		var bird = birdService.updateBird(id, updateBirdDTO);
 		return ResponseEntity.ok(bird);
 	}

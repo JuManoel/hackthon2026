@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -31,13 +33,13 @@ public class UserController {
     }
 
     @PostMapping("")
-    public ResponseEntity<GetUserDTO> createUser(@RequestBody CreateUserDTO createUserDTO) {
+    public ResponseEntity<GetUserDTO> createUser(@Valid @RequestBody CreateUserDTO createUserDTO) {
         var user = userService.createUser(createUserDTO);
         return ResponseEntity.created(URI.create("/user/" + user.id())).body(user);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<GetUserDTO> updateUser(@PathVariable String id, @RequestBody UpdateUserDTO updateUserDTO) {
+    public ResponseEntity<GetUserDTO> updateUser(@PathVariable String id, @Valid @RequestBody UpdateUserDTO updateUserDTO) {
         return ResponseEntity.ok(userService.updateUser(id, updateUserDTO));
     }
 

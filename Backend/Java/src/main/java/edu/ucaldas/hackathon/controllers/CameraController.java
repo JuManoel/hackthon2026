@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
+import jakarta.validation.Valid;
 
 
 
@@ -54,13 +55,13 @@ public class CameraController {
 
 
     @PostMapping("")
-    public ResponseEntity<GetCameraDTO> createCamera(@RequestBody CreateCameraDTO createCameraDTO) {
+    public ResponseEntity<GetCameraDTO> createCamera(@Valid @RequestBody CreateCameraDTO createCameraDTO) {
         var camera = cameraService.createCamera(createCameraDTO);
         return ResponseEntity.created(URI.create("/camera/" + camera.id())).body(camera);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<GetCameraDTO> updateCamera(@PathVariable String id, @RequestBody UpdateCameraDTO updateCameraDTO) {
+    public ResponseEntity<GetCameraDTO> updateCamera(@PathVariable String id, @Valid @RequestBody UpdateCameraDTO updateCameraDTO) {
         var camera = cameraService.updateCamera(id, updateCameraDTO);
         return ResponseEntity.ok(camera);
     }

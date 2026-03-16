@@ -1,9 +1,11 @@
 package edu.ucaldas.hackathon.infra.erros;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -68,6 +70,21 @@ public class ErrorHandle {
     @ExceptionHandler({ SaveFileError.class, IOException.class })
     public ResponseEntity<ErrorDTO> handleSaveFileError(SaveFileError e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorDTO(e.getMessage(), "500"));
+    }
+
+    /**
+     * Handles validation errors from {@link MethodArgumentNotValidException}.
+     * Returns a response entity with HTTP status 400 (Bad Request) and validation error messages.
+     *
+     * @param e the exception thrown when request body validation fails
+     * @return a {@link ResponseEntity} containing the validation error details and HTTP status 400
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorDTO> handleValidationErrors(MethodArgumentNotValidException e) {
+        String errorMessage = e.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorDTO(errorMessage, "400"));
     }
 
 }
