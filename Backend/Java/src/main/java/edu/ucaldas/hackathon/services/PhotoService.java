@@ -1,6 +1,5 @@
 package edu.ucaldas.hackathon.services;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
