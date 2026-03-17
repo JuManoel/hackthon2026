@@ -583,7 +583,9 @@
   text-align: left;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .bird-chat-attach-menu-item:hover {

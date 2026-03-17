@@ -45,7 +45,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background 150ms ease, color 150ms ease;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
 }
 
 .bird-camera-modal-close:hover {
@@ -118,7 +120,7 @@
     max-width: none;
     border-radius: 0;
   }
-  
+
   .bird-camera-modal-body {
     flex: 1;
     aspect-ratio: auto;
