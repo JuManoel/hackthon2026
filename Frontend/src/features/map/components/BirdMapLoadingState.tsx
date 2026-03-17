@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 
-import { Spinner } from '../../../components/Spinner'
-import { MAP_LABELS } from '../constants/map.labels'
+import { Spinner } from '@/components/Spinner'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
 
 export const BirdMapLoadingState: FC = () => {
   return (

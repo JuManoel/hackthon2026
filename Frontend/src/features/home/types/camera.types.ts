@@ -14,6 +14,17 @@ export interface CameraDto {
   readonly location: CameraLocationDto
 }
 
+export interface CameraPageResponse {
+  readonly content: readonly CameraDto[]
+  readonly number: number
+  readonly size: number
+  readonly totalElements: number
+  readonly totalPages: number
+  readonly first: boolean
+  readonly last: boolean
+  readonly empty: boolean
+}
+
 export interface CameraUpsertPayload {
   readonly name: string
   readonly angleXY: number

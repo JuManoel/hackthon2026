@@ -1,17 +1,17 @@
 import { useEffect, useState, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { labels } from '../../../constants/labels'
-import { AuthLayout } from '../components/AuthLayout'
-import { PasswordField } from '../components/PasswordField'
-import { TextField } from '../components/TextField'
-import { useAuth } from '../hooks/useAuth'
-import type { RegisterFormValues } from '../types/auth'
+import { labels } from '@/constants/labels'
+import { AuthLayout } from '@/features/auth/components/AuthLayout'
+import { PasswordField } from '@/features/auth/components/PasswordField'
+import { TextField } from '@/features/auth/components/TextField'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import type { RegisterFormValues } from '@/features/auth/types/auth'
 import {
   validatePassword,
   validatePasswordConfirmation,
   validateUsername,
-} from '../utils/auth.validation'
+} from '@/features/auth/utils/auth.validation'
 
 const initialValues: RegisterFormValues = {
   username: '',
@@ -89,11 +89,15 @@ export const RegisterPage: FC = () => {
     >
       <TextField
         id="register-username"
+        name="username"
         label={labels.usernameLabel}
         placeholder={labels.usernamePlaceholder}
         value={formValues.username}
         error={fieldErrors.username}
         disabled={isLoading}
+        required
+        minLength={3}
+        maxLength={64}
         autoComplete="username"
         onChange={(event) => {
           if (error) {
@@ -116,11 +120,15 @@ export const RegisterPage: FC = () => {
 
       <PasswordField
         id="register-password"
+        name="password"
         label={labels.passwordLabel}
         placeholder={labels.passwordRulesPlaceholder}
         value={formValues.password}
         error={fieldErrors.password}
         disabled={isLoading}
+        required
+        minLength={8}
+        maxLength={128}
         autoComplete="new-password"
         toggleLabel={labels.passwordToggle}
         onChange={(event) => {
@@ -144,11 +152,15 @@ export const RegisterPage: FC = () => {
 
       <PasswordField
         id="register-confirm-password"
+        name="confirmPassword"
         label={labels.confirmPasswordLabel}
         placeholder={labels.passwordRulesPlaceholder}
         value={formValues.confirmPassword}
         error={fieldErrors.confirmPassword}
         disabled={isLoading}
+        required
+        minLength={8}
+        maxLength={128}
         autoComplete="new-password"
         toggleLabel={labels.passwordToggle}
         onChange={(event) => {

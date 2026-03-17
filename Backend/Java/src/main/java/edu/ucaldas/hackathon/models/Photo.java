@@ -25,8 +25,8 @@ public class Photo {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    private String url;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String base64;
 
     @Column(name = "taken_at", nullable = false)
     private LocalDateTime takenAt;

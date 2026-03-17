@@ -1,9 +1,9 @@
 import type { FC } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
-import { labels } from '../constants/labels'
-import { useAuth } from '../features/auth/hooks/useAuth'
-import { Spinner } from './Spinner'
+import { labels } from '@/constants/labels'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { Spinner } from '@/components/Spinner'
 
 export const ProtectedRoute: FC = () => {
   const { isAuthenticated, isLoading } = useAuth()

@@ -64,10 +64,11 @@ public class SpeciesController {
         summary = "Obtener todas las especies (paginado)",
         description = "Retorna una lista paginada de todas las especies de pájaros registradas"
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Lista de especies"
-    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de especies"),
+        @ApiResponse(responseCode = "400", description = "Parámetros de paginación inválidos"),
+        @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
     public ResponseEntity<Page<GetSpeciesDTO>> getAllSpecies(
             @Parameter(description = "Configuración de paginación (page, size, sort)")
             @PageableDefault(size = 20) Pageable pageable) {

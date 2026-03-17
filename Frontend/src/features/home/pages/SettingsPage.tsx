@@ -1,10 +1,10 @@
 import { useEffect, type FC } from 'react'
 
-import { labels } from '../../../constants/labels'
-import { AuthSubmitButton } from '../../auth/components/AuthSubmitButton'
-import { useAuth } from '../../auth/hooks/useAuth'
-import { HomeShell } from '../components/HomeShell'
-import { Card } from '../../../shared/ui/card/Card'
+import { labels } from '@/constants/labels'
+import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { HomeShell } from '@/features/home/components/HomeShell'
+import { Card } from '@/shared/ui/card/Card'
 
 interface SettingsPageProps {
   readonly __noProps?: never

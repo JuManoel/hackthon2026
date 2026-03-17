@@ -26,7 +26,8 @@ public class ErrorHandle {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorDTO(e.getMessage(), "404"));
     }
 
-    @ExceptionHandler({ ErrorToken.class, MissingToken.class })
+    @ExceptionHandler({ ErrorToken.class, MissingToken.class,
+            org.springframework.security.core.AuthenticationException.class })
     public ResponseEntity<ErrorDTO> handleErrorToken(RuntimeException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorDTO(e.getMessage(), "401"));
     }

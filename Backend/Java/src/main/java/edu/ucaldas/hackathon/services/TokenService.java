@@ -26,7 +26,7 @@ public class TokenService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${app.timezone.offset}")
+    @Value("${app.timezone.offset:-05:00}")
     private String timezoneOffset;
 
     public String generateToken(User user) {

@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { Spinner } from '../../../components/Spinner'
+import { Spinner } from '@/components/Spinner'
 
 interface AuthSubmitButtonProps {
   readonly label: string

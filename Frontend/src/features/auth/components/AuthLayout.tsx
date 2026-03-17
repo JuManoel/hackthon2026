@@ -1,8 +1,8 @@
 import type { FC, ReactNode } from 'react'
 
-import '../auth.css'
-import { AuthSubmitButton } from './AuthSubmitButton'
-import { AuthLink } from './AuthLink'
+import '@/features/auth/auth.css'
+import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton'
+import { AuthLink } from '@/features/auth/components/AuthLink'
 
 interface AuthLayoutProps {
   readonly title: string
@@ -54,6 +54,10 @@ export const AuthLayout: FC<AuthLayoutProps> = ({
         <div className="auth-content">
           <form
             className="auth-form"
+            noValidate
+            onInvalid={(event) => {
+              event.preventDefault()
+            }}
             onSubmit={(event) => {
               event.preventDefault()
               void onSubmit()

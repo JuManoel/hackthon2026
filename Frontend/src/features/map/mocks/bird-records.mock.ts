@@ -1,4 +1,4 @@
-import type { BirdRecord } from '../types/map.types'
+import type { BirdRecord } from '@/features/map/types/map.types'
 
 export const BIRD_RECORDS_MOCK: BirdRecord[] = [
   { id: 'br-1', speciesId: 'sp-1', photoId: 'photo-1', cameraId: 'cam-1' },

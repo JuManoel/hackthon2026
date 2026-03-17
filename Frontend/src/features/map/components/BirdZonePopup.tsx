@@ -1,13 +1,13 @@
 import type { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Button } from '../../../shared/ui/button/Button'
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import { MAP_LABELS } from '../constants/map.labels'
-import type { BirdZone } from '../types/map.types'
-import { formatRelativeDetection } from '../utils/date.utils'
-import { formatFrequencyPercentage } from '../utils/frequency.utils'
-import { CameraPopupCard, type CameraPopupDetailItem, type CameraPopupSummaryRow } from './CameraPopupCard'
+import { Button } from '@/shared/ui/button/Button'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { formatRelativeDetection } from '@/features/map/utils/date.utils'
+import { formatFrequencyPercentage } from '@/features/map/utils/frequency.utils'
+import { CameraPopupCard, type CameraPopupDetailItem, type CameraPopupSummaryRow } from '@/features/map/components/CameraPopupCard'
 
 interface BirdZonePopupProps {
   readonly zone: BirdZone

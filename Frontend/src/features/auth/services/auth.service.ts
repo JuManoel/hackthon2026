@@ -1,13 +1,13 @@
-import { labels } from '../../../constants/labels'
-import { TOKEN_STORAGE_KEY } from '../../../config'
-import { fetchApi, HttpError } from '../../../services/http.service'
+import { labels } from '@/constants/labels'
+import { TOKEN_STORAGE_KEY } from '@/config'
+import { fetchApi, HttpError } from '@/services/http.service'
 import type {
   AuthErrorCode,
   AuthMeResponse,
   AuthTokenResponse,
   LoginRequest,
   RegisterRequest,
-} from '../types/auth'
+} from '@/features/auth/types/auth'
 
 const defaultUserRole = 'GUIDE'
 
@@ -69,6 +69,10 @@ export function mapAuthErrorCode(error: unknown): AuthErrorCode {
     return 'AUTH_USERNAME_TAKEN'
   }
 
+  if (error.status === badRequestStatus) {
+    return 'AUTH_VALIDATION_ERROR'
+  }
+
   return 'AUTH_UNKNOWN_ERROR'
 }
 
@@ -82,6 +86,8 @@ export function getAuthErrorLabel(errorCode: AuthErrorCode): string {
       return labels.authNetworkError
     case 'AUTH_USERNAME_TAKEN':
       return labels.authUsernameTaken
+    case 'AUTH_VALIDATION_ERROR':
+      return labels.authValidationError
     default:
       return labels.authUnexpectedError
   }

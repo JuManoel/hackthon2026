@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 
-import type { BirdZone } from '../types/map.types'
-import { getBirdZones } from '../services/map.service'
-import { useMockBirdMapFeed } from './useMockBirdMapFeed'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { getBirdZones } from '@/features/map/services/map.service'
+import { useMockBirdMapFeed } from '@/features/map/hooks/useMockBirdMapFeed'
 
 type UseBirdMapDataReturn = {
   zones: BirdZone[]

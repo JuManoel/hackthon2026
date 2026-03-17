@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, FC } from 'react'
 import { Link } from 'react-router-dom'
 
-import '../auth.css'
+import '@/features/auth/auth.css'
 
 type AuthLinkVariant = 'inline' | 'footer'
 

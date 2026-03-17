@@ -1,16 +1,21 @@
 import type { ChangeEventHandler, FC } from 'react'
 
-import '../auth.css'
-import { usePasswordVisibility } from '../hooks/usePasswordVisibility'
-import { InputControl } from './InputControl'
+import '@/features/auth/auth.css'
+import { usePasswordVisibility } from '@/features/auth/hooks/usePasswordVisibility'
+import { InputControl } from '@/features/auth/components/InputControl'
 
 interface PasswordFieldProps {
   readonly id: string
+  readonly name?: string
   readonly label: string
   readonly placeholder: string
   readonly value: string
   readonly onChange: ChangeEventHandler<HTMLInputElement>
   readonly autoComplete?: string
+  readonly required?: boolean
+  readonly minLength?: number
+  readonly maxLength?: number
+  readonly pattern?: string
   readonly toggleLabel: string
   readonly error?: string | null
   readonly disabled?: boolean
@@ -18,11 +23,16 @@ interface PasswordFieldProps {
 
 export const PasswordField: FC<PasswordFieldProps> = ({
   id,
+  name,
   label,
   placeholder,
   value,
   onChange,
   autoComplete,
+  required,
+  minLength,
+  maxLength,
+  pattern,
   toggleLabel,
   error = null,
   disabled = false,
@@ -38,10 +48,15 @@ export const PasswordField: FC<PasswordFieldProps> = ({
       <div className="auth-password-wrapper">
         <InputControl
           id={id}
+          name={name}
           value={value}
           placeholder={placeholder}
           type={inputType}
           autoComplete={autoComplete}
+          required={required}
+          minLength={minLength}
+          maxLength={maxLength}
+          pattern={pattern}
           onChange={onChange}
           className="auth-input-password"
           isInvalid={Boolean(error)}

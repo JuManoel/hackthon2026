@@ -1,19 +1,44 @@
-import { labels } from '../../../constants/labels'
-import { fetchApi, HttpError } from '../../../services/http.service'
-import type { CameraDto, CameraListItem, CameraUpsertPayload } from '../types/camera.types'
+import { labels } from '@/constants/labels'
+import { fetchApi, HttpError } from '@/services/http.service'
+import type {
+  CameraDto,
+  CameraListItem,
+  CameraPageResponse,
+  CameraUpsertPayload,
+} from '@/features/home/types/camera.types'
 
-const CAMERAS_ENDPOINT = '/camara'
+const CAMERAS_ENDPOINT = '/camera'
 
 type CameraErrorCode =
   | 'CAMERA_NETWORK_ERROR'
+  | 'CAMERA_BAD_REQUEST'
   | 'CAMERA_FORBIDDEN'
   | 'CAMERA_UNAUTHORIZED'
   | 'CAMERA_NOT_FOUND'
   | 'CAMERA_CONFLICT'
   | 'CAMERA_UNKNOWN_ERROR'
 
-export async function listCamerasRequest(token: string): Promise<readonly CameraDto[]> {
-  return fetchApi<readonly CameraDto[]>(CAMERAS_ENDPOINT, {
+interface CameraListQuery {
+  readonly page: number
+  readonly size: number
+}
+
+function buildCameraListQueryString(query: CameraListQuery): string {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    size: String(query.size),
+  })
+
+  return params.toString()
+}
+
+export async function listCamerasRequest(
+  token: string,
+  query: CameraListQuery,
+): Promise<CameraPageResponse> {
+  const queryString = buildCameraListQueryString(query)
+
+  return fetchApi<CameraPageResponse>(`${CAMERAS_ENDPOINT}?${queryString}`, {
     method: 'GET',
     token,
   })
@@ -65,6 +90,10 @@ export function mapCameraErrorCode(error: unknown): CameraErrorCode {
     return 'CAMERA_NETWORK_ERROR'
   }
 
+  if (error.status === 400) {
+    return 'CAMERA_BAD_REQUEST'
+  }
+
   if (error.status === 401) {
     return 'CAMERA_UNAUTHORIZED'
   }
@@ -88,6 +117,8 @@ export function getCameraErrorLabel(code: CameraErrorCode): string {
   switch (code) {
     case 'CAMERA_NETWORK_ERROR':
       return labels.camerasErrorNetwork
+    case 'CAMERA_BAD_REQUEST':
+      return labels.camerasErrorBadRequest
     case 'CAMERA_UNAUTHORIZED':
       return labels.camerasErrorUnauthorized
     case 'CAMERA_FORBIDDEN':

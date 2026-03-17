@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FC, type ReactNode } from 'react'
 
-import { labels } from '../../../constants/labels'
+import { labels } from '@/constants/labels'
 import {
   clearStoredToken,
   getAuthErrorLabel,
@@ -10,9 +10,9 @@ import {
   meRequest,
   registerRequest,
   storeToken,
-} from '../services/auth.service'
-import type { AuthUser, LoginRequest, RegisterRequest } from '../types/auth'
-import { AuthContext, type AuthContextValue } from './auth-context'
+} from '@/features/auth/services/auth.service'
+import type { AuthUser, LoginRequest, RegisterRequest } from '@/features/auth/types/auth'
+import { AuthContext, type AuthContextValue } from '@/features/auth/context/auth-context'
 
 interface AuthProviderProps {
   readonly children: ReactNode

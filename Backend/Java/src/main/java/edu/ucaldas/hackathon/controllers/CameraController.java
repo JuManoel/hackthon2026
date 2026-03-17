@@ -69,10 +69,11 @@ public class CameraController {
         summary = "Obtener todas las cámaras (paginado)",
         description = "Retorna una lista paginada de todas las cámaras registradas en el sistema"
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Lista de cámaras"
-    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de cámaras"),
+        @ApiResponse(responseCode = "400", description = "Parámetros de paginación inválidos"),
+        @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
     public ResponseEntity<Page<GetCameraDTO>> getAllCameras(
             @Parameter(description = "Configuración de paginación (page, size, sort)")
             @PageableDefault(size = 20) Pageable pageable) {

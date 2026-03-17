@@ -40,7 +40,7 @@ public class Bird {
     private Photo photo;
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "camera_id", nullable = false)
+    @JoinColumn(name = "camera_id", nullable = false, foreignKey = @jakarta.persistence.ForeignKey(name = "fk_birds_camera_id"))
     private Camera camera;
 
 }

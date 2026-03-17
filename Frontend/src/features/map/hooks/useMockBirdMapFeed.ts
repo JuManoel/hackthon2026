@@ -1,9 +1,9 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react'
 
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import type { BirdZone } from '../types/map.types'
-import { inferActivityLevel } from '../utils/activity.utils'
-import { calculateFrequency } from '../utils/frequency.utils'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { inferActivityLevel } from '@/features/map/utils/activity.utils'
+import { calculateFrequency } from '@/features/map/utils/frequency.utils'
 
 type UseMockBirdMapFeedParams = {
   zones: BirdZone[]

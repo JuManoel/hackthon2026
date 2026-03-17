@@ -2,9 +2,9 @@ import type { FC } from 'react'
 import { LocateFixed } from 'lucide-react'
 import { useMap } from 'react-leaflet'
 
-import { Button } from '../../../shared/ui/button/Button'
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import { MAP_LABELS } from '../constants/map.labels'
+import { Button } from '@/shared/ui/button/Button'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
 
 export const BirdMapCenterControl: FC = () => {
   const map = useMap()

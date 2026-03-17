@@ -1,24 +1,24 @@
 services:
-  database:
-    build:
-      context: ./database
-      dockerfile: dockerfile
-    container_name: hackthon2026-database
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-hackathon}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Hackthon2026*}
-    ports:
-      - "${DB_PORT_EXTERNAL:-5432}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
+  # database:
+  #   build:
+  #     context: ./database
+  #     dockerfile: dockerfile
+  #   container_name: hackthon2026-database
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB:-hackathon}
+  #     POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Hackthon2026*}
+  #   ports:
+  #     - "${DB_PORT_EXTERNAL:-5432}:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 10s
+  #   restart: unless-stopped
 
   backend-java:
     build:
@@ -26,13 +26,10 @@ services:
       dockerfile: dockerfile
     container_name: hackthon2026-backend-java
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:-hackathon}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-Hackthon2026*}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://sdtc-ucaldas-5858.f.aivencloud.com:15367/defaultdb?sslmode=require
+      SPRING_DATASOURCE_USERNAME: avnadmin
+      SPRING_DATASOURCE_PASSWORD: AVNS_5WzZrrHYJjkid7dmS1s
       JWT_SECRET: ${JWT_SECRET:-9d3edce9-bd07-400d-96e8-d58de3ddf976}
-    depends_on:
-      database:
-        condition: service_healthy
     ports:
       - "${JAVA_PORT_EXTERNAL:-8080}:8080"
     restart: unless-stopped
@@ -43,9 +40,10 @@ services:
       dockerfile: dockerfile
     container_name: hackthon2026-backend-python
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-Hackthon2026*}@database:5432/${POSTGRES_DB:-hackathon}
+      # DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-Hackthon2026*}@database:5432/${POSTGRES_DB:-hackathon}
       SUPABASE_TABLE: ${SUPABASE_TABLE:-avistamientos}
       PYTHONUNBUFFERED: "1"
+      JAVA_SERVICE_URL: "http://backend-java:8080" # <-- Nueva linea para conexion Docker interna
     depends_on:
       database:
         condition: service_healthy
@@ -65,6 +63,3 @@ services:
     ports:
       - "${FRONTEND_PORT_EXTERNAL:-5173}:80"
     restart: unless-stopped
-
-volumes:
-  postgres_data:

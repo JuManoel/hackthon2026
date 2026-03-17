@@ -64,10 +64,11 @@ public class PhotoController {
         summary = "Obtener todas las fotografías (paginado)",
         description = "Retorna una lista paginada de todas las fotografías registradas en el sistema"
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Lista de fotografías"
-    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Lista de fotografías"),
+        @ApiResponse(responseCode = "400", description = "Parámetros de paginación inválidos"),
+        @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
     public ResponseEntity<Page<GetPhotoDTO>> getAllPhotos(
             @Parameter(description = "Configuración de paginación (page, size, sort)")
             @PageableDefault(size = 20) Pageable pageable) {

@@ -1,4 +1,4 @@
-import type { CameraPosition } from '../types/map.types'
+import type { CameraPosition } from '@/features/map/types/map.types'
 
 export const POSITIONS_MOCK: CameraPosition[] = [
   {

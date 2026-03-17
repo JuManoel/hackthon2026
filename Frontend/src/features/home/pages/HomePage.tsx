@@ -1,8 +1,8 @@
 import { useEffect, type FC } from 'react'
 
-import { labels } from '../../../constants/labels'
-import { HomeBirdMap } from '../../map/components/HomeBirdMap'
-import { HomeShell } from '../components/HomeShell'
+import { labels } from '@/constants/labels'
+import { HomeBirdMap } from '@/features/map/components/HomeBirdMap'
+import { HomeShell } from '@/features/home/components/HomeShell'
 
 interface HomePageProps {
   readonly __noProps?: never

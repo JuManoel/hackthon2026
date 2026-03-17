@@ -1,8 +1,8 @@
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import type { BuildBirdZonesParams, BirdZone } from '../types/map.types'
-import { inferActivityLevel } from '../utils/activity.utils'
-import { toBirdZoneSpeciesStats } from '../utils/bird-zone.utils'
-import { getLatestIsoDate } from '../utils/date.utils'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import type { BuildBirdZonesParams, BirdZone } from '@/features/map/types/map.types'
+import { inferActivityLevel } from '@/features/map/utils/activity.utils'
+import { toBirdZoneSpeciesStats } from '@/features/map/utils/bird-zone.utils'
+import { getLatestIsoDate } from '@/features/map/utils/date.utils'
 
 type SpeciesCounter = {
   speciesId: string

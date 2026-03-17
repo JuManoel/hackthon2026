@@ -16,11 +16,6 @@ env/
 # Entorno y variables
 .env
 
-# Modelos de Machine Learning (Pesos grandes - YOLO)
-weights/
-*.pt
-*.onnx
-
 # Archivos de la aplicación y logs
 registro_avistamientos.csv
 *.log

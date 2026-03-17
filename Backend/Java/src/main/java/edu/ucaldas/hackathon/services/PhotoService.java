@@ -32,7 +32,7 @@ public class PhotoService {
 
     public GetPhotoDTO createPhoto(CreatePhotoDTO createPhotoDTO) {
         var photo = new Photo();
-        photo.setUrl(createPhotoDTO.url());
+        photo.setBase64(createPhotoDTO.base64());
         photo.setTakenAt(createPhotoDTO.takenAt());
 
         photoRepository.save(photo);
@@ -43,7 +43,7 @@ public class PhotoService {
         var photo = photoRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new DataNotFound("Photo not found"));
 
-        photo.setUrl(updatePhotoDTO.url());
+        photo.setBase64(updatePhotoDTO.base64());
         photo.setTakenAt(updatePhotoDTO.takenAt());
 
         photoRepository.save(photo);
@@ -59,7 +59,7 @@ public class PhotoService {
     private GetPhotoDTO toGetPhotoDTO(Photo photo) {
         return new GetPhotoDTO(
                 photo.getId(),
-                photo.getUrl(),
+                photo.getBase64(),
                 photo.getTakenAt());
     }
 }

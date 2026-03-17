@@ -1,17 +1,31 @@
 import { Camera, Eye, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useMemo, useState, type FC } from 'react'
+import { useEffect, useMemo, useState, type FC } from 'react'
 
-import { labels } from '../../../constants/labels'
-import { Badge } from '../../../shared/ui/badge/Badge'
-import { Button } from '../../../shared/ui/button/Button'
-import { Card } from '../../../shared/ui/card/Card'
-import type { CameraListItem } from '../types/camera.types'
+import { labels } from '@/constants/labels'
+import { Badge } from '@/shared/ui/badge/Badge'
+import { Button } from '@/shared/ui/button/Button'
+import { Card } from '@/shared/ui/card/Card'
+import type { CameraListItem } from '@/features/home/types/camera.types'
+
+const DESKTOP_BREAKPOINT_QUERY = '(min-width: 768px)'
+const MOBILE_TITLE_MAX_LENGTH = 5
+const MOBILE_DESCRIPTION_MAX_LENGTH = 10
+const DESKTOP_DESCRIPTION_MAX_LENGTH = 120
+
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value
+  }
+
+  return `${value.slice(0, maxLength)}...`
+}
 
 interface CameraListProps {
   readonly cameras: readonly CameraListItem[]
   readonly isAdmin: boolean
   readonly isBusy?: boolean
   readonly onCreate?: () => void
+  readonly onView: (cameraId: string) => void
   readonly onEdit: (cameraId: string) => void
   readonly onDelete: (cameraId: string) => void
 }
@@ -50,10 +64,39 @@ export const CameraList: FC<CameraListProps> = ({
   isAdmin,
   isBusy = false,
   onCreate,
+  onView,
   onEdit,
   onDelete,
 }) => {
   const countLabel = useMemo(() => labels.camerasCountLabel(cameras.length), [cameras.length])
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof globalThis.matchMedia !== 'function') {
+      return false
+    }
+
+    return globalThis.matchMedia(DESKTOP_BREAKPOINT_QUERY).matches
+  })
+
+  useEffect(() => {
+    if (typeof globalThis.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = globalThis.matchMedia(DESKTOP_BREAKPOINT_QUERY)
+
+    const handleMediaQueryChange = (event: MediaQueryListEvent): void => {
+      setIsDesktop(event.matches)
+    }
+
+    setIsDesktop(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleMediaQueryChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaQueryChange)
+    }
+  }, [])
+
+  const descriptionMaxLength = isDesktop ? DESKTOP_DESCRIPTION_MAX_LENGTH : MOBILE_DESCRIPTION_MAX_LENGTH
 
   return (
     <Card className="cameras-list-card">
@@ -84,16 +127,19 @@ export const CameraList: FC<CameraListProps> = ({
             </div>
 
             <div className="camera-list-item-info">
-              <p className="camera-list-item-title">{camera.name}</p>
-              <p className="camera-list-item-subtitle">{`${camera.region} · ${camera.address}`}</p>
+              <p className="camera-list-item-title">
+                {isDesktop ? camera.name : truncateText(camera.name, MOBILE_TITLE_MAX_LENGTH)}
+              </p>
+              <p className="camera-list-item-subtitle">
+                {truncateText(`${camera.region} · ${camera.address}`, descriptionMaxLength)}
+              </p>
             </div>
 
             <div className="camera-list-item-actions">
               <Button
                 type="button"
-                title={labels.camerasViewDisabledTooltip}
-                disabled
                 aria-label={`${labels.camerasViewAction} ${camera.name}`}
+                onClick={() => onView(camera.id)}
               >
                 <Eye size={15} />
               </Button>

@@ -3,11 +3,11 @@ import { Circle, MapContainer, TileLayer, useMap } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import type { BirdZone } from '../types/map.types'
-import { BirdMapCenterControl } from './BirdMapCenterControl'
-import { BirdMapLegend } from './BirdMapLegend'
-import { BirdZonesLayer } from './BirdZonesLayer'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { BirdMapCenterControl } from '@/features/map/components/BirdMapCenterControl'
+import { BirdMapLegend } from '@/features/map/components/BirdMapLegend'
+import { BirdZonesLayer } from '@/features/map/components/BirdZonesLayer'
 
 interface BirdMapViewProps {
   readonly zones: BirdZone[]

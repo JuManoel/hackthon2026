@@ -1,5 +1,5 @@
-import type { BirdZoneSpeciesStat } from '../types/map.types'
-import { calculateFrequency } from './frequency.utils'
+import type { BirdZoneSpeciesStat } from '@/features/map/types/map.types'
+import { calculateFrequency } from '@/features/map/utils/frequency.utils'
 
 type SpeciesCountEntry = {
   speciesId: string

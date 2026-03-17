@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type FC, type SyntheticEvent } from 'react'
-import { ShieldAlert } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { CameraOff, ShieldAlert } from 'lucide-react'
 
-import { labels } from '../../../constants/labels'
-import { Spinner } from '../../../components/Spinner'
-import { getStoredToken } from '../../auth/services/auth.service'
-import { useAuth } from '../../auth/hooks/useAuth'
-import { HomeShell } from '../components/HomeShell'
-import { Card } from '../../../shared/ui/card/Card'
-import { Button } from '../../../shared/ui/button/Button'
+import { labels } from '@/constants/labels'
+import { Spinner } from '@/components/Spinner'
+import { getStoredToken } from '@/features/auth/services/auth.service'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { HomeShell } from '@/features/home/components/HomeShell'
+import { Card } from '@/shared/ui/card/Card'
+import { Button } from '@/shared/ui/button/Button'
 import {
   createCameraRequest,
   deleteCameraRequest,
@@ -16,10 +17,10 @@ import {
   mapCameraErrorCode,
   toCameraListItem,
   updateCameraRequest,
-} from '../services/cameras.service'
-import type { CameraDto, CameraUpsertPayload } from '../types/camera.types'
-import { CameraList } from '../components/CameraList'
-import { CameraFormField } from '../components/CameraFormField'
+} from '@/features/home/services/cameras.service'
+import type { CameraDto, CameraUpsertPayload } from '@/features/home/types/camera.types'
+import { CameraList } from '@/features/home/components/CameraList'
+import { CameraFormField } from '@/features/home/components/CameraFormField'
 
 interface CamerasPageProps {
   readonly __noProps?: never
@@ -38,6 +39,9 @@ interface CameraFormState {
   readonly height: string
 }
 
+type CameraFormFieldKey = keyof CameraFormState
+type CameraFormErrors = Partial<Record<CameraFormFieldKey, string>>
+
 const EMPTY_CAMERA_FORM: CameraFormState = {
   name: '',
   angleXY: '',
@@ -47,6 +51,70 @@ const EMPTY_CAMERA_FORM: CameraFormState = {
   latitude: '',
   longitude: '',
   height: '',
+}
+
+const DESKTOP_BREAKPOINT_QUERY = '(min-width: 768px)'
+const MOBILE_CAMERA_PAGE_SIZE = 6
+const DESKTOP_CAMERA_PAGE_SIZE = 4
+
+function isBlank(value: string): boolean {
+  return value.trim().length === 0
+}
+
+function parseFiniteNumber(value: string): number | null {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function validateRequiredText(value: string): string | undefined {
+  if (isBlank(value)) {
+    return labels.camerasFormRequiredField
+  }
+
+  return undefined
+}
+
+function validateRequiredNumber(value: string): string | undefined {
+  const parsed = parseFiniteNumber(value)
+
+  if (parsed === null) {
+    return isBlank(value) ? labels.camerasFormRequiredField : labels.camerasFormNumericInvalid
+  }
+
+  return undefined
+}
+
+function validateNumberInRange(value: string, min: number, max: number, rangeError: string): string | undefined {
+  const requiredNumberError = validateRequiredNumber(value)
+
+  if (requiredNumberError) {
+    return requiredNumberError
+  }
+
+  const parsed = Number(value)
+
+  if (parsed < min || parsed > max) {
+    return rangeError
+  }
+
+  return undefined
+}
+
+function validateCameraForm(state: CameraFormState): CameraFormErrors {
+  const rawErrors: CameraFormErrors = {
+    name: validateRequiredText(state.name),
+    angleXY: validateNumberInRange(state.angleXY, 0, 360, labels.camerasFormAngleRange),
+    angleXZ: validateNumberInRange(state.angleXZ, 0, 360, labels.camerasFormAngleRange),
+    region: validateRequiredText(state.region),
+    address: validateRequiredText(state.address),
+    latitude: validateNumberInRange(state.latitude, -90, 90, labels.camerasFormLatitudeRange),
+    longitude: validateNumberInRange(state.longitude, -180, 180, labels.camerasFormLongitudeRange),
+    height: validateRequiredNumber(state.height),
+  }
+
+  return Object.fromEntries(
+    Object.entries(rawErrors).filter(([, message]) => typeof message === 'string' && message.length > 0),
+  ) as CameraFormErrors
 }
 
 function toCameraFormState(camera: CameraDto): CameraFormState {
@@ -97,9 +165,13 @@ function toCameraPayload(state: CameraFormState): CameraUpsertPayload | null {
 }
 
 export const CamerasPage: FC<CamerasPageProps> = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
   const [cameras, setCameras] = useState<readonly CameraDto[]>([])
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isMutating, setIsMutating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -107,11 +179,20 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
   const [formMode, setFormMode] = useState<CameraFormMode | null>(null)
   const [editingCameraId, setEditingCameraId] = useState<string | null>(null)
   const [formState, setFormState] = useState<CameraFormState>(EMPTY_CAMERA_FORM)
+  const [formErrors, setFormErrors] = useState<CameraFormErrors>({})
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof globalThis.matchMedia !== 'function') {
+      return false
+    }
+
+    return globalThis.matchMedia(DESKTOP_BREAKPOINT_QUERY).matches
+  })
   const isFormVisible = isAdmin && formMode !== null
+  const pageSize = isDesktop ? DESKTOP_CAMERA_PAGE_SIZE : MOBILE_CAMERA_PAGE_SIZE
 
   const cameraListItems = useMemo(() => cameras.map(toCameraListItem), [cameras])
 
-  const loadCameras = useCallback(async (): Promise<void> => {
+  const loadCameras = useCallback(async (page = currentPage): Promise<void> => {
     const token = getStoredToken()
 
     if (!token) {
@@ -124,19 +205,31 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
     setIsLoading(true)
 
     try {
-      const response = await listCamerasRequest(token)
-      setCameras(response)
+      const response = await listCamerasRequest(token, {
+        page,
+        size: pageSize,
+      })
+
+      if (response.totalPages > 0 && page > response.totalPages - 1) {
+        setCurrentPage(response.totalPages - 1)
+        return
+      }
+
+      setCameras(response.content)
+      setTotalPages(response.totalPages)
+      setTotalElements(response.totalElements)
     } catch (requestError) {
       setError(getCameraErrorLabel(mapCameraErrorCode(requestError)))
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [currentPage, pageSize])
 
   const handleOpenCreateForm = useCallback(() => {
     setFormMode('create')
     setEditingCameraId(null)
     setFormError(null)
+    setFormErrors({})
     setFormState(EMPTY_CAMERA_FORM)
   }, [])
 
@@ -156,6 +249,7 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
       setFormMode('edit')
       setEditingCameraId(cameraToEdit.id)
       setFormError(null)
+      setFormErrors({})
       setFormState(toCameraFormState(cameraToEdit))
     },
     [cameras, isAdmin],
@@ -183,7 +277,7 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
 
       try {
         await deleteCameraRequest(token, cameraId)
-        setCameras((currentCameras) => currentCameras.filter((camera) => camera.id !== cameraId))
+        await loadCameras(currentPage)
 
         if (editingCameraId === cameraId) {
           setFormMode(null)
@@ -196,7 +290,7 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
         setIsMutating(false)
       }
     },
-    [editingCameraId, isAdmin, isMutating],
+    [currentPage, editingCameraId, isAdmin, isMutating, loadCameras],
   )
 
   const handleFormChange = useCallback(
@@ -205,6 +299,18 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
         ...currentState,
         [field]: value,
       }))
+
+      setFormErrors((currentErrors) => {
+        if (!currentErrors[field]) {
+          return currentErrors
+        }
+
+        const nextErrors = { ...currentErrors }
+        delete nextErrors[field]
+        return nextErrors
+      })
+
+      setFormError(null)
     },
     [],
   )
@@ -213,6 +319,7 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
     setFormMode(null)
     setEditingCameraId(null)
     setFormError(null)
+    setFormErrors({})
     setFormState(EMPTY_CAMERA_FORM)
   }, [])
 
@@ -221,6 +328,13 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
       event.preventDefault()
 
       if (!isAdmin || !formMode || isMutating) {
+        return
+      }
+
+      const validationErrors = validateCameraForm(formState)
+      if (Object.keys(validationErrors).length > 0) {
+        setFormErrors(validationErrors)
+        setFormError(labels.camerasFormInvalid)
         return
       }
 
@@ -238,6 +352,7 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
         return
       }
 
+      setFormErrors({})
       setFormError(null)
       setError(null)
       setIsMutating(true)
@@ -251,30 +366,72 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
 
         setFormMode(null)
         setEditingCameraId(null)
+        setFormErrors({})
         setFormState(EMPTY_CAMERA_FORM)
-        await loadCameras()
+        await loadCameras(currentPage)
       } catch (requestError) {
         setFormError(getCameraErrorLabel(mapCameraErrorCode(requestError)))
       } finally {
         setIsMutating(false)
       }
     },
-    [editingCameraId, formMode, formState, isAdmin, isMutating, loadCameras],
+    [currentPage, editingCameraId, formMode, formState, isAdmin, isMutating, loadCameras],
   )
+
+  const handlePreviousPage = useCallback(() => {
+    setCurrentPage((page) => Math.max(0, page - 1))
+  }, [])
+
+  const handleNextPage = useCallback(() => {
+    setCurrentPage((page) => {
+      if (totalPages === 0) {
+        return page
+      }
+
+      return Math.min(totalPages - 1, page + 1)
+    })
+  }, [totalPages])
 
   useEffect(() => {
     document.title = labels.camerasPageTitle
   }, [])
 
   useEffect(() => {
-    void loadCameras()
-  }, [loadCameras])
+    if (typeof globalThis.matchMedia !== 'function') {
+      return
+    }
+
+    const mediaQuery = globalThis.matchMedia(DESKTOP_BREAKPOINT_QUERY)
+
+    const handleMediaQueryChange = (event: MediaQueryListEvent): void => {
+      setIsDesktop(event.matches)
+    }
+
+    setIsDesktop(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleMediaQueryChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleMediaQueryChange)
+    }
+  }, [])
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [pageSize])
+
+  useEffect(() => {
+    void loadCameras(currentPage)
+  }, [currentPage, loadCameras])
+
+  const handleViewCamera = useCallback((cameraId: string) => {
+    navigate(`/cameras/${cameraId}`)
+  }, [navigate])
 
   return (
     <HomeShell activeTab="cameras" contentClassName="home-shell-content--top">
       <div className="cameras-page-wrap">
 
-        {!isFormVisible ? (
+        {isFormVisible ? null : (
           <>
             <header className="cameras-page-intro">
               <h1 className="cameras-page-title">{labels.camerasManagementTitle}</h1>
@@ -305,27 +462,58 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
               ) : null}
 
               {!isLoading && cameraListItems.length > 0 ? (
-                <CameraList
-                  cameras={cameraListItems}
-                  isAdmin={isAdmin}
-                  isBusy={isMutating}
-                  onCreate={handleOpenCreateForm}
-                  onEdit={handleOpenEditForm}
-                  onDelete={(cameraId) => {
-                    void handleDeleteCamera(cameraId)
-                  }}
-                />
+                <>
+                  <CameraList
+                    cameras={cameraListItems}
+                    isAdmin={isAdmin}
+                    isBusy={isMutating}
+                    onCreate={handleOpenCreateForm}
+                    onView={handleViewCamera}
+                    onEdit={handleOpenEditForm}
+                    onDelete={(cameraId) => {
+                      void handleDeleteCamera(cameraId)
+                    }}
+                  />
+                  <nav className="cameras-pagination" aria-label={labels.camerasPaginationAria}>
+                    <Button
+                      type="button"
+                      disabled={isLoading || currentPage === 0}
+                      onClick={handlePreviousPage}
+                    >
+                      {labels.camerasPaginationPrevious}
+                    </Button>
+                    <span className="cameras-pagination-status">
+                      {labels.camerasPaginationStatus(currentPage + 1, Math.max(1, totalPages), totalElements)}
+                    </span>
+                    <Button
+                      type="button"
+                      disabled={isLoading || totalPages === 0 || currentPage >= totalPages - 1}
+                      onClick={handleNextPage}
+                    >
+                      {labels.camerasPaginationNext}
+                    </Button>
+                  </nav>
+                </>
               ) : null}
 
               {!isLoading && !error && cameraListItems.length === 0 ? (
                 <Card className="cameras-feedback-card cameras-feedback-card--empty">
+                  <span className="cameras-feedback-icon" aria-hidden="true">
+                    <CameraOff size={44} strokeWidth={1.8} />
+                  </span>
                   <p className="cameras-feedback-title">{labels.camerasEmptyTitle}</p>
-                  <p className="cameras-feedback-text">{labels.camerasEmptyDescription}</p>
+                  {isAdmin ? (
+                    <Button type="button" disabled={isMutating} onClick={handleOpenCreateForm}>
+                      {labels.camerasCreateAction}
+                    </Button>
+                  ) : (
+                    <p className="cameras-feedback-text">{labels.camerasEmptyDescription}</p>
+                  )}
                 </Card>
               ) : null}
             </div>
           </>
-        ) : null}
+        )}
 
         {isAdmin && formMode ? (
           <>
@@ -334,29 +522,35 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
               <h2 className="cameras-page-title">
                 {formMode === 'create' ? labels.camerasCreateFormTitle : labels.camerasEditFormTitle}
               </h2>
-              <div className="cameras-page-header-end">
-                <Button type="button" disabled={isMutating} onClick={handleFormCancel}>
-                  {labels.camerasFormCancel}
-                </Button>
-              </div>
+              <span aria-hidden="true" />
             </header>
 
             <Card className="cameras-form-card">
-              <form className="cameras-form-grid" onSubmit={(event) => void handleFormSubmit(event)}>
+              <form className="cameras-form-grid" noValidate onSubmit={(event) => void handleFormSubmit(event)}>
                 <CameraFormField
                   id="camera-name"
+                  name="name"
                   label={labels.camerasFormNameLabel}
+                  errorMessage={formErrors.name}
                   value={formState.name}
                   placeholder={labels.camerasFormNamePlaceholder}
+                  required
+                  maxLength={120}
                   onChange={(event) => {
                     handleFormChange('name', event.target.value)
                   }}
                 />
                 <CameraFormField
                   id="camera-angle-xy"
+                  name="angleXY"
                   label={labels.camerasFormAngleXYLabel}
+                  errorMessage={formErrors.angleXY}
                   type="number"
                   step="any"
+                  required
+                  min={0}
+                  max={360}
+                  inputMode="decimal"
                   value={formState.angleXY}
                   onChange={(event) => {
                     handleFormChange('angleXY', event.target.value)
@@ -364,9 +558,15 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                 />
                 <CameraFormField
                   id="camera-angle-xz"
+                  name="angleXZ"
                   label={labels.camerasFormAngleXZLabel}
+                  errorMessage={formErrors.angleXZ}
                   type="number"
                   step="any"
+                  required
+                  min={0}
+                  max={360}
+                  inputMode="decimal"
                   value={formState.angleXZ}
                   onChange={(event) => {
                     handleFormChange('angleXZ', event.target.value)
@@ -374,27 +574,41 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                 />
                 <CameraFormField
                   id="camera-region"
+                  name="region"
                   label={labels.camerasFormRegionLabel}
+                  errorMessage={formErrors.region}
                   value={formState.region}
                   placeholder={labels.camerasFormRegionPlaceholder}
+                  required
+                  maxLength={120}
                   onChange={(event) => {
                     handleFormChange('region', event.target.value)
                   }}
                 />
                 <CameraFormField
                   id="camera-address"
+                  name="address"
                   label={labels.camerasFormAddressLabel}
+                  errorMessage={formErrors.address}
                   value={formState.address}
                   placeholder={labels.camerasFormAddressPlaceholder}
+                  required
+                  maxLength={180}
                   onChange={(event) => {
                     handleFormChange('address', event.target.value)
                   }}
                 />
                 <CameraFormField
                   id="camera-latitude"
+                  name="latitude"
                   label={labels.camerasFormLatitudeLabel}
+                  errorMessage={formErrors.latitude}
                   type="number"
                   step="any"
+                  required
+                  min={-90}
+                  max={90}
+                  inputMode="decimal"
                   value={formState.latitude}
                   onChange={(event) => {
                     handleFormChange('latitude', event.target.value)
@@ -402,9 +616,15 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                 />
                 <CameraFormField
                   id="camera-longitude"
+                  name="longitude"
                   label={labels.camerasFormLongitudeLabel}
+                  errorMessage={formErrors.longitude}
                   type="number"
                   step="any"
+                  required
+                  min={-180}
+                  max={180}
+                  inputMode="decimal"
                   value={formState.longitude}
                   onChange={(event) => {
                     handleFormChange('longitude', event.target.value)
@@ -412,9 +632,13 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                 />
                 <CameraFormField
                   id="camera-height"
+                  name="height"
                   label={labels.camerasFormHeightLabel}
+                  errorMessage={formErrors.height}
                   type="number"
                   step="any"
+                  required
+                  inputMode="decimal"
                   value={formState.height}
                   onChange={(event) => {
                     handleFormChange('height', event.target.value)
@@ -424,6 +648,9 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                 {formError ? <p className="cameras-form-error">{formError}</p> : null}
 
                 <div className="cameras-form-actions">
+                  <Button type="button" disabled={isMutating} onClick={handleFormCancel}>
+                    {labels.camerasFormCancel}
+                  </Button>
                   <Button type="submit" variant="primary" disabled={isMutating}>
                     {formMode === 'create' ? labels.camerasFormSubmitCreate : labels.camerasFormSubmitEdit}
                   </Button>

@@ -1,4 +1,4 @@
-import type { BirdSpecies } from '../types/map.types'
+import type { BirdSpecies } from '@/features/map/types/map.types'
 
 export const SPECIES_MOCK: BirdSpecies[] = [
   {

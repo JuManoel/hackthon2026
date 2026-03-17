@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "cameras")
+@Table(name = "camaras")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +32,7 @@ public class Camera {
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(columnDefinition = "UUID", updatable = false)
     private UUID id;
+
     private String name;
     @Column(name = "angle_xy", precision = 5, scale = 2)
     private BigDecimal angleXY;

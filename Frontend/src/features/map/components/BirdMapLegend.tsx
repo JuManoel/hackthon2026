@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { CircleHelp } from 'lucide-react'
 
-import { MAP_LABELS } from '../constants/map.labels'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
 
 export const BirdMapLegend: FC = () => {
   return (

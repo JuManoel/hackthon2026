@@ -1,6 +1,6 @@
 import type { CSSProperties, FC } from 'react'
 
-import './spinner.css'
+import '@/components/spinner.css'
 
 const spinnerSegments = 12
 

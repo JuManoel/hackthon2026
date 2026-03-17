@@ -14,8 +14,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # ============= CONFIGURACIÓN DEL SERVIDOR =============
 
 # Ruta de los modelos YOLO
-RUTA_MODELO_DETECTOR = os.path.join(BASE_DIR, "weights", "yolov8m.pt")
-RUTA_MODELO_CLASIFICADOR = os.path.join(BASE_DIR, "weights", "best(2).pt")
+RUTA_MODELO_DETECTOR = os.path.join(BASE_DIR, "weights", "yolo26n.pt")
+RUTA_MODELO_CLASIFICADOR = os.path.join(BASE_DIR, "weights", "best.pt")
 
 # Parámetros de detección
 CLASE_AVES = 14  # COCO dataset: 14 = bird

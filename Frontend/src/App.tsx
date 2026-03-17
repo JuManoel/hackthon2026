@@ -1,13 +1,13 @@
 import type { FC } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { LoginPage } from './features/auth/pages/LoginPage'
-import { RegisterPage } from './features/auth/pages/RegisterPage'
-import { CameraDetailPage } from './features/home/pages/CameraDetailPage'
-import { CamerasPage } from './features/home/pages/CamerasPage'
-import { HomePage } from './features/home/pages/HomePage'
-import { SettingsPage } from './features/home/pages/SettingsPage'
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { LoginPage } from '@/features/auth/pages/LoginPage'
+import { RegisterPage } from '@/features/auth/pages/RegisterPage'
+import { CameraDetailPage } from '@/features/home/pages/CameraDetailPage'
+import { CamerasPage } from '@/features/home/pages/CamerasPage'
+import { HomePage } from '@/features/home/pages/HomePage'
+import { SettingsPage } from '@/features/home/pages/SettingsPage'
 
 interface AppProps {
   readonly __noProps?: never

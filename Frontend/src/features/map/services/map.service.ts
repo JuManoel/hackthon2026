@@ -1,10 +1,10 @@
-import { BIRD_RECORDS_MOCK } from '../mocks/bird-records.mock'
-import { CAMERAS_MOCK } from '../mocks/cameras.mock'
-import { PHOTOS_MOCK } from '../mocks/photos.mock'
-import { POSITIONS_MOCK } from '../mocks/positions.mock'
-import { SPECIES_MOCK } from '../mocks/species.mock'
-import type { BirdMapQuery, BirdZone, BuildBirdZonesParams } from '../types/map.types'
-import { buildBirdZones } from './map.mapper'
+import { BIRD_RECORDS_MOCK } from '@/features/map/mocks/bird-records.mock'
+import { CAMERAS_MOCK } from '@/features/map/mocks/cameras.mock'
+import { PHOTOS_MOCK } from '@/features/map/mocks/photos.mock'
+import { POSITIONS_MOCK } from '@/features/map/mocks/positions.mock'
+import { SPECIES_MOCK } from '@/features/map/mocks/species.mock'
+import type { BirdMapQuery, BirdZone, BuildBirdZonesParams } from '@/features/map/types/map.types'
+import { buildBirdZones } from '@/features/map/services/map.mapper'
 
 export async function getBirdMapData(query?: BirdMapQuery): Promise<BuildBirdZonesParams> {
   void query

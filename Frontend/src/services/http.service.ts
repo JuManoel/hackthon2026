@@ -1,8 +1,13 @@
-import { API_BASE_URL, REQUEST_TIMEOUT_MS } from '../config'
+import { API_BASE_URL, REQUEST_TIMEOUT_MS } from '@/config'
 
 interface ApiErrorPayload {
   readonly message?: string
   readonly error?: string
+}
+
+interface ApiFieldErrorPayload {
+  readonly field?: string
+  readonly message?: string
 }
 
 interface RequestOptions extends Omit<RequestInit, 'body' | 'headers'> {
@@ -32,7 +37,7 @@ function buildUrl(endpoint: string): string {
 }
 
 function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
-  if (typeof value !== 'object' || value === null) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false
   }
 
@@ -41,12 +46,45 @@ function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
   return typeof payload.message === 'string' || typeof payload.error === 'string'
 }
 
+function isApiFieldErrorPayload(value: unknown): value is ApiFieldErrorPayload {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const payload = value as ApiFieldErrorPayload
+
+  return typeof payload.message === 'string'
+}
+
+function toValidationMessage(fieldErrors: readonly ApiFieldErrorPayload[]): string {
+  const messages = fieldErrors
+    .map((item) => item.message?.trim())
+    .filter((message): message is string => Boolean(message))
+
+  if (messages.length === 0) {
+    return 'Validation error'
+  }
+
+  return messages.join('. ')
+}
+
 async function parseErrorPayload(response: Response): Promise<ApiErrorPayload | null> {
   try {
     const payload: unknown = await response.json()
 
     if (isApiErrorPayload(payload)) {
       return payload
+    }
+
+    if (Array.isArray(payload)) {
+      const fieldErrors = payload.filter(isApiFieldErrorPayload)
+
+      if (fieldErrors.length > 0) {
+        return {
+          message: toValidationMessage(fieldErrors),
+          error: 'VALIDATION_ERROR',
+        }
+      }
     }
   } catch {
     return null
