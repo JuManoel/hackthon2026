@@ -31,31 +31,31 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Clases de aves entrenadas (100 clases - orden exacto del dataset)
 BIRD_CLASSES = {
-    0: "Acropternis orthonyx", 1: "Adelomyia melanogenys", 2: "Aglaeactis cupripennis", 3: "Andigena hypoglauca",
-    4: "Andigena nigrirostris", 5: "Anisognathus igniventris", 6: "Anisognathus lacrymosus", 7: "Anisognathus somptuosus",
-    8: "Atlapetes flaviceps", 9: "Bubulcus ibis", 10: "Campylorhamphus pusillus", 11: "Capito hypoleucus",
-    12: "Cardellina canadensis", 13: "Cathartes aura", 14: "Cercomacroides parkeri", 15: "Chalcostigma herrani",
-    16: "Chamaepetes goudotii", 17: "Chlorochrysa nitidissima", 18: "Chlorornis riefferii", 19: "Coeligena coeligena",
-    20: "Coeligena lutetiae", 21: "Coeligena torquata", 22: "Colaptes rivolii", 23: "Colibri coruscans",
-    24: "Columbina talpacoti", 25: "Coragyps atratus", 26: "Cyanocorax affinis", 27: "Cyanolyca armillata",
-    28: "Drymophila striaticeps", 29: "Dryocopus lineatus", 30: "Eriocnemis derbyi", 31: "Falco sparverius",
-    32: "Grallaria alleni", 33: "Grallaria alvarezi", 34: "Grallaria guatimalensis", 35: "Grallaria milleri",
-    36: "Grallaria nuchalis", 37: "Grallaria ruficapilla", 38: "Grallaria rufocinerea", 39: "Grallaricula cucullata",
-    40: "Habia cristata", 41: "Hapalopsittaca amazonina", 42: "Heliodoxa jacula", 43: "Heliothryx barroti",
-    44: "Henicorhina leucophrys", 45: "Hypopyrrhus pyrohypogaster", 46: "Leptosittaca branickii", 47: "Lipaugus fuscocinereus",
-    48: "Manacus vitellinus", 49: "Melanerpes formicivorus", 50: "Melanerpes pulcher", 51: "Merganetta armata",
-    52: "Metallura tyrianthina", 53: "Metallura williami", 54: "Mniotilta varia", 55: "Momotus aequatorialis",
-    56: "Myioborus ornatus", 57: "Ocreatus underwoodii", 58: "Odontophorus hyperythrus", 59: "Ognorhynchus icterotis",
-    60: "Ortalis columbiana", 61: "Oxypogon stuebelii", 62: "Parkesia noveboracensis", 63: "Penelope montagnii",
-    64: "Phalcoboenus carunculatus", 65: "Pharomachrus auriceps", 66: "Pheugopedius fasciatoventris", 67: "Picumnus granadensis",
-    68: "Pipreola riefferii", 69: "Pitangus sulphuratus", 70: "Poliocrania exsul", 71: "Porphyrio martinica",
-    72: "Psittacara wagleri", 73: "Pterophanes cyanopterus", 74: "Rupicola peruvianus", 75: "Rupornis magnirostris",
-    76: "Saltator cinctus", 77: "Saltator striatipectus", 78: "Schistes geoffroyi", 79: "Scytalopus opacus",
-    80: "Scytalopus spillmanni", 81: "Scytalopus stilesi", 82: "Sericossypha albocristata", 83: "Thalurania colombica",
-    84: "Thraupis episcopus", 85: "Thraupis palmarum", 86: "Threnetes ruckeri", 87: "Trogon personatus",
-    88: "Troglodytes aedon", 89: "Turdus fuscater", 90: "Turdus ignobilis", 91: "Tyrannus melancholicus",
-    92: "Xiphocolaptes promeropirhynchus", 93: "Zenaida auriculata", 94: "Zonotrichia capensis", 95: "Acropternis orthonyx",
-    96: "Adelomyia melanogenys", 97: "Aglaeactis cupripennis", 98: "Andigena hypoglauca", 99: "Andigena nigrirostris"
+    0: 'Acropternis orthonyx', 1: 'Adelomyia melanogenys', 2: 'Aglaeactis cupripennis', 3: 'Andigena hypoglauca', 
+    4: 'Andigena nigrirostris', 5: 'Anisognathus igniventris', 6: 'Anisognathus lacrymosus', 7: 'Anisognathus somptuosus', 
+    8: 'Atlapetes flaviceps', 9: 'Bubulcus ibis', 10: 'Butorides striata', 11: 'Campephilus pollens', 
+    12: 'Campylorhamphus pusillus', 13: 'Capito hypoleucus', 14: 'Cardellina canadensis', 15: 'Cathartes aura', 
+    16: 'Cercomacroides parkeri', 17: 'Chalcostigma herrani', 18: 'Chamaepetes goudotii', 19: 'Chlorochrysa nitidissima', 
+    20: 'Chlorornis riefferii', 21: 'Coeligena coeligena', 22: 'Coeligena lutetiae', 23: 'Coeligena torquata', 
+    24: 'Colaptes rivolii', 25: 'Colibri coruscans', 26: 'Columbina talpacoti', 27: 'Coragyps atratus', 
+    28: 'Cyanocorax affinis', 29: 'Cyanolyca armillata', 30: 'Drymophila striaticeps', 31: 'Dryocopus lineatus', 
+    32: 'Dubusia taeniata', 33: 'Elanus leucurus', 34: 'Eriocnemis derbyi', 35: 'Falco sparverius', 
+    36: 'Grallaria alleni', 37: 'Grallaria alvarezi', 38: 'Grallaria guatimalensis', 39: 'Grallaria milleri', 
+    40: 'Grallaria nuchalis', 41: 'Grallaria ruficapilla', 42: 'Grallaria rufocinerea', 43: 'Grallaricula cucullata', 
+    44: 'Habia cristata', 45: 'Hapalopsittaca amazonina', 46: 'Heliodoxa jacula', 47: 'Heliothryx barroti', 
+    48: 'Henicorhina leucophrys', 49: 'Hypopyrrhus pyrohypogaster', 50: 'Leptosittaca branickii', 51: 'Lipaugus fuscocinereus', 
+    52: 'Manacus vitellinus', 53: 'Melanerpes formicivorus', 54: 'Melanerpes pulcher', 55: 'Merganetta armata', 
+    56: 'Metallura tyrianthina', 57: 'Metallura williami', 58: 'Mniotilta varia', 59: 'Momotus aequatorialis', 
+    60: 'Myioborus ornatus', 61: 'Ocreatus underwoodii', 62: 'Odontophorus hyperythrus', 63: 'Ognorhynchus icterotis', 
+    64: 'Ortalis columbiana', 65: 'Oxypogon stuebelii', 66: 'Parkesia noveboracensis', 67: 'Penelope montagnii', 
+    68: 'Phalcoboenus carunculatus', 69: 'Pharomachrus auriceps', 70: 'Pheugopedius fasciatoventris', 71: 'Picumnus granadensis', 
+    72: 'Pipreola riefferii', 73: 'Pitangus sulphuratus', 74: 'Poliocrania exsul', 75: 'Porphyrio martinica', 
+    76: 'Psittacara wagleri', 77: 'Pterophanes cyanopterus', 78: 'Rupicola peruvianus', 79: 'Rupornis magnirostris', 
+    80: 'Saltator cinctus', 81: 'Saltator striatipectus', 82: 'Schistes geoffroyi', 83: 'Scytalopus opacus', 
+    84: 'Scytalopus spillmanni', 85: 'Scytalopus stilesi', 86: 'Sericossypha albocristata', 87: 'Setophaga cerulea', 
+    88: 'Thalurania colombica', 89: 'Thraupis episcopus', 90: 'Thraupis palmarum', 91: 'Threnetes ruckeri', 
+    92: 'Troglodytes aedon', 93: 'Trogon personatus', 94: 'Turdus fuscater', 95: 'Turdus ignobilis', 
+    96: 'Tyrannus melancholicus', 97: 'Xiphocolaptes promeropirhynchus', 98: 'Zenaida auriculata', 99: 'Zonotrichia capensis'
 }
 
 def init_models():
@@ -209,6 +209,8 @@ def procesar_frame(bytes_imagen: bytes, id_dispositivo: str, ubicacion: str) -> 
 
     return {
         "timestamp": datetime.datetime.now().isoformat(),
+        "frame_w": w,
+        "frame_h": h,
         "aves_encontradas": len(candidatas),
         "detalles": candidatas
     }

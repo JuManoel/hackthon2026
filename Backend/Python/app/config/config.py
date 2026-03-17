@@ -19,7 +19,7 @@ RUTA_MODELO_CLASIFICADOR = os.path.join(BASE_DIR, "weights", "best.pt")
 
 # Parámetros de detección
 CLASE_AVES = 14  # COCO dataset: 14 = bird
-CONFIANZA_DETECTOR = 0.2  # Rango: 0.0 - 1.0 (0% - 100%)
+CONFIANZA_DETECTOR = 0.05  # Rango: 0.0 - 1.0 (0% - 100%)
 CONFIANZA_CLASIFICADOR = 0.40
 MIN_ANCHO_CAJA = 20
 MIN_ALTO_CAJA = 20

@@ -4,6 +4,7 @@ import { Circle, MapContainer, TileLayer, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
 import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
 import type { BirdZone } from '@/features/map/types/map.types'
 import { BirdMapCenterControl } from '@/features/map/components/BirdMapCenterControl'
 import { BirdMapLegend } from '@/features/map/components/BirdMapLegend'
@@ -11,6 +12,8 @@ import { BirdZonesLayer } from '@/features/map/components/BirdZonesLayer'
 
 interface BirdMapViewProps {
   readonly zones: BirdZone[]
+  readonly isDelayed: boolean
+  readonly delayMs: number
 }
 
 const MapSizeInvalidator: FC = () => {
@@ -61,11 +64,14 @@ const MapSizeInvalidator: FC = () => {
   return null
 }
 
-export const BirdMapView: FC<BirdMapViewProps> = ({ zones }) => {
+export const BirdMapView: FC<BirdMapViewProps> = ({ zones, isDelayed, delayMs }) => {
   const [useFallbackTiles, setUseFallbackTiles] = useState(false)
 
   return (
     <div className="bird-map-view">
+      {isDelayed ? (
+        <div className="bird-map-delay-indicator">{MAP_LABELS.mapDelayIndicator(Math.floor(delayMs / 1000))}</div>
+      ) : null}
       <MapContainer
         center={[MAP_CONSTANTS.caldasCenter.lat, MAP_CONSTANTS.caldasCenter.lng]}
         zoom={MAP_CONSTANTS.defaultZoom}

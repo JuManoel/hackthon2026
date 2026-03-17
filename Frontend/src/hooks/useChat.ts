@@ -121,7 +121,7 @@ export function useChat(): UseChatResult {
 
       setChatState('open')
     }
-  }, [chatState, composerValue])
+  }, [chatState, composerValue, messages])
 
   useEffect(() => {
     if (!isChatVisible) {

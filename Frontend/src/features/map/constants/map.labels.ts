@@ -16,6 +16,7 @@ export const MAP_LABELS = {
   unknownDate: 'Sin registro reciente',
   mapLoadError: 'No fue posible cargar el mapa de actividad.',
   mapNoData: 'No hay actividad reciente registrada.',
+  mapDelayIndicator: (seconds: number): string => `Latencia alta: ${seconds}s`,
   mapLoadingAria: 'Cargando mapa de actividad',
   mapCenterControlAria: 'Control para centrar en Caldas',
   speciesDetectedCountSuffix: 'especies detectadas',

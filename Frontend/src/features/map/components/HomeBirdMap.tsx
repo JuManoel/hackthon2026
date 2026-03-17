@@ -9,19 +9,19 @@ import { BirdMapLoadingState } from '@/features/map/components/BirdMapLoadingSta
 import { BirdMapView } from '@/features/map/components/BirdMapView'
 
 export const HomeBirdMap: FC = () => {
-  const { zones, isLoading, error } = useBirdMapData()
+  const { zones, state, error, isDelayed, delayMs } = useBirdMapData()
 
-  if (isLoading) {
+  if (state === 'loading') {
     return <BirdMapLoadingState />
   }
 
-  if (error) {
-    return <BirdMapEmptyState message={MAP_LABELS.mapLoadError} />
+  if (state === 'error') {
+    return <BirdMapEmptyState message={error ?? MAP_LABELS.mapLoadError} />
   }
 
-  if (zones.length === 0) {
+  if (state === 'empty') {
     return <BirdMapEmptyState message={MAP_LABELS.mapNoData} />
   }
 
-  return <BirdMapView zones={zones} />
+  return <BirdMapView zones={zones} isDelayed={isDelayed} delayMs={delayMs} />
 }

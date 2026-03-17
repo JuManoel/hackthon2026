@@ -8,6 +8,7 @@ import { CameraDetailPage } from '@/features/home/pages/CameraDetailPage'
 import { CamerasPage } from '@/features/home/pages/CamerasPage'
 import { HomePage } from '@/features/home/pages/HomePage'
 import { SettingsPage } from '@/features/home/pages/SettingsPage'
+import { StreamingDummyPage } from '@/features/home/pages/StreamingDummyPage'
 
 interface AppProps {
   readonly __noProps?: never
@@ -17,6 +18,7 @@ const routes = {
   home: '/home',
   settings: '/settings',
   cameras: '/cameras',
+  streamingDummy: '/streaming-dummy',
   login: '/login',
   register: '/register',
 } as const
@@ -31,6 +33,7 @@ const App: FC<AppProps> = () => {
         <Route path={routes.settings} element={<SettingsPage />} />
         <Route path={routes.cameras} element={<CamerasPage />} />
         <Route path={`${routes.cameras}/:cameraId`} element={<CameraDetailPage />} />
+        <Route path={routes.streamingDummy} element={<StreamingDummyPage />} />
       </Route>
 
       <Route path={routes.login} element={<LoginPage />} />

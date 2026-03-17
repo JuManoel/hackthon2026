@@ -20,6 +20,7 @@ import edu.ucaldas.hackathon.infra.exception.DataNotFound;
 import edu.ucaldas.hackathon.infra.exception.MissingData;
 import edu.ucaldas.hackathon.models.Bird;
 import edu.ucaldas.hackathon.models.Photo;
+import edu.ucaldas.hackathon.models.Species;
 import edu.ucaldas.hackathon.repositories.IBirdRepository;
 import edu.ucaldas.hackathon.repositories.ICameraRepository;
 import edu.ucaldas.hackathon.repositories.IPhotoRepository;
@@ -76,9 +77,7 @@ public class BirdService {
 	}
 
 	public GetBirdDTO createPhotoAndBird(CreatePhotoBirdDTO createPhotoBirdDTO) {
-		var species = speciesRepository.findByScientificName(createPhotoBirdDTO.yoloLabel().replace("_", " "))
-				.orElseThrow(
-						() -> new DataNotFound("Species with label " + createPhotoBirdDTO.yoloLabel() + " not found"));
+		var species = resolveSpecies(createPhotoBirdDTO.yoloLabel());
 		var camera = cameraRepository.findById(UUID.fromString(createPhotoBirdDTO.cameraId()))
 				.orElseThrow(() -> new DataNotFound("Camera not found"));
 
@@ -99,6 +98,28 @@ public class BirdService {
 		messagingTemplate.convertAndSend("/topic/alerts", birdDTO);
 
 		return birdDTO;
+	}
+
+	private Species resolveSpecies(String rawLabel) {
+		var normalizedLabel = rawLabel == null ? "" : rawLabel.trim();
+		var normalizedScientificName = normalizedLabel.replace("_", " ");
+
+		var speciesByScientificName = speciesRepository.findByScientificName(normalizedScientificName);
+		if (speciesByScientificName.isPresent()) {
+			return speciesByScientificName.get();
+		}
+
+		var speciesByYoloLabel = speciesRepository.findByYoloLabel(normalizedLabel);
+		if (speciesByYoloLabel.isPresent()) {
+			return speciesByYoloLabel.get();
+		}
+
+		var generatedSpecies = new Species();
+		generatedSpecies.setPopularName(normalizedScientificName);
+		generatedSpecies.setScientificName(normalizedScientificName);
+		generatedSpecies.setYoloLabel(normalizedLabel);
+
+		return speciesRepository.save(generatedSpecies);
 	}
 
 	public GetBirdDTO createBird(CreateBirdDTO createBirdDTO) {

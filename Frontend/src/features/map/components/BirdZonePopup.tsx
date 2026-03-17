@@ -17,6 +17,10 @@ export const BirdZonePopup: FC<BirdZonePopupProps> = ({ zone }) => {
   const navigate = useNavigate()
 
   const handleViewCamera = (): void => {
+    if (!zone.hasStreaming) {
+      return
+    }
+
     navigate(`/cameras/${zone.cameraId}`)
   }
 
@@ -38,19 +42,19 @@ export const BirdZonePopup: FC<BirdZonePopupProps> = ({ zone }) => {
     .slice(0, MAP_CONSTANTS.maxSpeciesInPopup)
     .map((speciesStat) => ({
       id: speciesStat.speciesId,
-      primaryText: speciesStat.commonName,
-      secondaryText: formatFrequencyPercentage(speciesStat.frequency),
+      primaryText: `${speciesStat.commonName} (${speciesStat.count})`,
+      secondaryText: `${formatFrequencyPercentage(speciesStat.frequency)} · ${speciesStat.confidence.toFixed(2)}`,
     }))
 
   return (
     <CameraPopupCard
       title={zone.cameraName}
-      subtitle={`${zone.region}${MAP_LABELS.locationSeparator}${zone.direction}`}
+      subtitle={`ID ${zone.cameraId.slice(0, 8)}`}
       summaryRows={summaryRows}
       detailsTitle={MAP_LABELS.detectedSpecies}
       detailItems={detailItems}
       action={
-        <Button variant="primary" onClick={handleViewCamera}>
+        <Button variant="primary" disabled={!zone.hasStreaming} onClick={handleViewCamera}>
           {MAP_LABELS.viewCamera}
         </Button>
       }

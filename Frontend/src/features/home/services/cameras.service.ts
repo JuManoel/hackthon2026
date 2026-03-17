@@ -78,6 +78,7 @@ export function toCameraListItem(camera: CameraDto): CameraListItem {
     region: camera.location.region,
     address: camera.location.address,
     previewUrl: null,
+    hasStreaming: false,
   }
 }
 

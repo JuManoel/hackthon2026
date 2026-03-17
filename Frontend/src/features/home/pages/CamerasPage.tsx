@@ -21,6 +21,7 @@ import {
 import type { CameraDto, CameraUpsertPayload } from '@/features/home/types/camera.types'
 import { CameraList } from '@/features/home/components/CameraList'
 import { CameraFormField } from '@/features/home/components/CameraFormField'
+import { useCameraStreamingAvailability } from '@/features/realtime/hooks/useCameraStreamingAvailability'
 
 interface CamerasPageProps {
   readonly __noProps?: never
@@ -189,8 +190,20 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
   })
   const isFormVisible = isAdmin && formMode !== null
   const pageSize = isDesktop ? DESKTOP_CAMERA_PAGE_SIZE : MOBILE_CAMERA_PAGE_SIZE
+  const activeStreamingIds = useCameraStreamingAvailability()
 
-  const cameraListItems = useMemo(() => cameras.map(toCameraListItem), [cameras])
+  const cameraListItems = useMemo(
+    () =>
+      cameras.map((camera) => {
+        const listItem = toCameraListItem(camera)
+
+        return {
+          ...listItem,
+          hasStreaming: activeStreamingIds.has(camera.id),
+        }
+      }),
+    [activeStreamingIds, cameras],
+  )
 
   const loadCameras = useCallback(async (page = currentPage): Promise<void> => {
     const token = getStoredToken()

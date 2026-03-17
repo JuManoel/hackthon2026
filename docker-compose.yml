@@ -42,6 +42,8 @@ services:
     environment:
       # DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-Hackthon2026*}@database:5432/${POSTGRES_DB:-hackathon}
       SUPABASE_TABLE: ${SUPABASE_TABLE:-avistamientos}
+      JAVA_SERVICE_URL: ${JAVA_SERVICE_URL:-http://backend-java:8080}
+      ENABLE_DETECTION_PHOTO_UPLOAD: ${ENABLE_DETECTION_PHOTO_UPLOAD:-false}
       PYTHONUNBUFFERED: "1"
     ports:
       - "${PYTHON_PORT_EXTERNAL:-8000}:8000"
@@ -53,6 +55,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_PYTHON_SERVICE_URL: ${VITE_PYTHON_SERVICE_URL:-http://localhost:8000}
     container_name: hackthon2026-frontend
     depends_on:
       - backend-java

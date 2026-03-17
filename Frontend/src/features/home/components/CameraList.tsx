@@ -88,7 +88,6 @@ export const CameraList: FC<CameraListProps> = ({
       setIsDesktop(event.matches)
     }
 
-    setIsDesktop(mediaQuery.matches)
     mediaQuery.addEventListener('change', handleMediaQueryChange)
 
     return () => {
@@ -138,6 +137,8 @@ export const CameraList: FC<CameraListProps> = ({
             <div className="camera-list-item-actions">
               <Button
                 type="button"
+                disabled={!camera.hasStreaming}
+                title={!camera.hasStreaming ? labels.camerasViewDisabledTooltip : undefined}
                 aria-label={`${labels.camerasViewAction} ${camera.name}`}
                 onClick={() => onView(camera.id)}
               >

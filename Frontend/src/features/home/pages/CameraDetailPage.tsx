@@ -1,503 +1,407 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FC,
-} from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Camera, AlertCircle, Loader2, Activity } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { labels } from '@/constants/labels'
-import { HomeShell } from '@/features/home/components/HomeShell'
-import { Button } from '../../../shared/ui/button/Button'
-import { Card } from '@/shared/ui/card/Card'
-import {
-  analysisService,
-  type AnalysisResult,
-  type BirdDetection,
-} from '../services/analysis.service'
-import { BirdDetectionCard } from '../components/BirdDetectionCard'
-import { DetectionStatsComponent } from '../components/DetectionStats'
-import './CameraDetailPage.css'
+import { Button } from '@/shared/ui/button/Button'
+import { CameraSocketAdapter } from '@/features/realtime/adapters/CameraSocketAdapter'
+import { StreamingSocketAdapter } from '@/features/realtime/adapters/StreamingSocketAdapter'
+import { REALTIME_CONSTANTS } from '@/features/realtime/adapters/realtime.constants'
+import type { ConnectionState, DetectionBird } from '@/features/realtime/types/realtime.types'
+import { useCameraStreamingAvailability } from '@/features/realtime/hooks/useCameraStreamingAvailability'
 import './CameraDetailPage.css'
 
 interface CameraDetailPageProps {
   readonly __noProps?: never
 }
 
-type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error' | 'disconnected'
+type FrameRenderMetrics = {
+  sourceWidth: number
+  sourceHeight: number
+  offsetX: number
+  offsetY: number
+  drawWidth: number
+  drawHeight: number
+}
+
+function toSourceBbox(
+  bbox: [number, number, number, number],
+  sourceWidth: number,
+  sourceHeight: number,
+): [number, number, number, number] {
+  const [x1, y1, x2, y2] = bbox
+
+  if (Math.max(Math.abs(x1), Math.abs(y1), Math.abs(x2), Math.abs(y2)) <= 1) {
+    return [x1 * sourceWidth, y1 * sourceHeight, x2 * sourceWidth, y2 * sourceHeight]
+  }
+
+  return [x1, y1, x2, y2]
+}
+
+function computeContainMetrics(
+  sourceWidth: number,
+  sourceHeight: number,
+  canvasWidth: number,
+  canvasHeight: number,
+): FrameRenderMetrics {
+  const safeSourceWidth = Math.max(1, sourceWidth)
+  const safeSourceHeight = Math.max(1, sourceHeight)
+  const safeCanvasWidth = Math.max(1, canvasWidth)
+  const safeCanvasHeight = Math.max(1, canvasHeight)
+
+  const scale = Math.min(safeCanvasWidth / safeSourceWidth, safeCanvasHeight / safeSourceHeight)
+  const drawWidth = Math.max(1, Math.round(safeSourceWidth * scale))
+  const drawHeight = Math.max(1, Math.round(safeSourceHeight * scale))
+  const offsetX = Math.floor((safeCanvasWidth - drawWidth) / 2)
+  const offsetY = Math.floor((safeCanvasHeight - drawHeight) / 2)
+
+  return {
+    sourceWidth: safeSourceWidth,
+    sourceHeight: safeSourceHeight,
+    offsetX,
+    offsetY,
+    drawWidth,
+    drawHeight,
+  }
+}
+
+function toConfidencePercent(confidence: number): number {
+  if (!Number.isFinite(confidence)) {
+    return 0
+  }
+
+  return confidence <= 1 ? confidence * 100 : confidence
+}
 
 export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
   const navigate = useNavigate()
-  const { cameraId } = useParams<{ cameraId: string }>()
+  const params = useParams<{ cameraId: string }>()
 
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const frameIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const initialCameraId = params.cameraId ?? ''
+  const activeStreamingSet = useCameraStreamingAvailability()
+  const [selectedCameraId, setSelectedCameraId] = useState(initialCameraId)
+  const [cameraIds, setCameraIds] = useState<string[]>(initialCameraId ? [initialCameraId] : [])
+  const [connectionState, setConnectionState] = useState<ConnectionState>(initialCameraId ? 'loading' : 'empty')
+  const [retryAttempt, setRetryAttempt] = useState(0)
+  const [delayMs, setDelayMs] = useState(0)
+  const [rotationDeg, setRotationDeg] = useState(0)
 
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('')
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle')
-  const [streamError, setStreamError] = useState<string>('')
-  const [detections, setDetections] = useState<BirdDetection[]>([])
-  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 })
-  const [showImageDetail, setShowImageDetail] = useState<BirdDetection | null>(null)
-  const [fps, setFps] = useState(4)
-  const frameCountRef = useRef(0)
-  const fpsTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const streamCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const frameMetricsRef = useRef<FrameRenderMetrics>({
+    sourceWidth: 1,
+    sourceHeight: 1,
+    offsetX: 0,
+    offsetY: 0,
+    drawWidth: 1,
+    drawHeight: 1,
+  })
+  const hasFrameRef = useRef(false)
+  const lastBirdsRef = useRef<DetectionBird[]>([])
+  const cameraSocketRef = useRef(new CameraSocketAdapter())
+  const streamingSocketRef = useRef(new StreamingSocketAdapter())
 
-  // Obtener lista de cámaras disponibles al montar
   useEffect(() => {
-    document.title = labels.cameraDetailPageTitle || 'Detalle de Cámara'
-
-    navigator.mediaDevices
-      .enumerateDevices()
-      .then((deviceInfos) => {
-        const videoDevices = deviceInfos.filter((d) => d.kind === 'videoinput')
-        setDevices(videoDevices)
-        if (videoDevices.length > 0 && !selectedDeviceId) {
-          setSelectedDeviceId(videoDevices[0].deviceId)
-        }
-      })
-      .catch((err) => {
-        console.error('Error enumerando dispositivos:', err)
-        setStreamError('No se pudieron obtener las cámaras disponibles.')
-      })
-
-    return () => {
-      stopStreaming()
-    }
+    document.title = labels.streamPageTitle
   }, [])
 
-  // Listener para cambios de estado del servicio de análisis
-  useEffect(() => {
-    const unsubscribeStatus = analysisService.onStatusChange((status) => {
-      setConnectionStatus(
-        status === 'connected'
-          ? 'connected'
-          : status === 'error'
-            ? 'error'
-            : 'disconnected',
+  const syncCanvasSize = useCallback(() => {
+    const streamCanvas = streamCanvasRef.current
+    const overlayCanvas = overlayCanvasRef.current
+
+    if (!streamCanvas || !overlayCanvas) {
+      return
+    }
+
+    const rect = streamCanvas.getBoundingClientRect()
+    const width = Math.floor(rect.width)
+    const height = Math.floor(rect.height)
+
+    if (width <= 0 || height <= 0) {
+      return
+    }
+
+    if (streamCanvas.width !== width || streamCanvas.height !== height) {
+      streamCanvas.width = width
+      streamCanvas.height = height
+    }
+
+    if (overlayCanvas.width !== width || overlayCanvas.height !== height) {
+      overlayCanvas.width = width
+      overlayCanvas.height = height
+    }
+
+    const previousMetrics = frameMetricsRef.current
+    frameMetricsRef.current = computeContainMetrics(
+      previousMetrics.sourceWidth,
+      previousMetrics.sourceHeight,
+      width,
+      height,
+    )
+  }, [])
+
+  const drawOverlay = useCallback(() => {
+    const canvas = overlayCanvasRef.current
+    if (!canvas) {
+      return
+    }
+
+    const context = canvas.getContext('2d')
+    if (!context) {
+      return
+    }
+
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    const frameMetrics = frameMetricsRef.current
+
+    lastBirdsRef.current.forEach((bird) => {
+      const [srcX1, srcY1, srcX2, srcY2] = toSourceBbox(
+        bird.bbox,
+        frameMetrics.sourceWidth,
+        frameMetrics.sourceHeight,
       )
-      if (status === 'error') {
-        setStreamError(
-          'Error en la conexión con el servidor de análisis. Verifica que Python esté ejecutándose.',
+      const x1 = frameMetrics.offsetX + (srcX1 / frameMetrics.sourceWidth) * frameMetrics.drawWidth
+      const y1 = frameMetrics.offsetY + (srcY1 / frameMetrics.sourceHeight) * frameMetrics.drawHeight
+      const x2 = frameMetrics.offsetX + (srcX2 / frameMetrics.sourceWidth) * frameMetrics.drawWidth
+      const y2 = frameMetrics.offsetY + (srcY2 / frameMetrics.sourceHeight) * frameMetrics.drawHeight
+      const width = Math.max(0, x2 - x1)
+      const height = Math.max(0, y2 - y1)
+
+      context.strokeStyle = '#c1121f'
+      context.lineWidth = 2
+      context.strokeRect(x1, y1, width, height)
+
+      const name = bird.scientificName || bird.species || labels.streamBoundingBoxFallback
+      const confidence = toConfidencePercent(bird.confidence)
+      const label = `${name} ${confidence.toFixed(1)}%`
+      context.font = '12px Inter, sans-serif'
+      const textWidth = context.measureText(label).width
+      const textHeight = 16
+
+      context.fillStyle = 'rgba(31, 31, 31, 0.85)'
+      context.fillRect(x1, Math.max(0, y1 - textHeight), textWidth + 10, textHeight)
+      context.fillStyle = '#ffffff'
+      context.fillText(label, x1 + 5, Math.max(12, y1 - 4))
+    })
+  }, [])
+
+  const drawFrame = useCallback(
+    async (blob: Blob): Promise<void> => {
+      const canvas = streamCanvasRef.current
+      if (!canvas) {
+        return
+      }
+
+      const context = canvas.getContext('2d')
+      if (!context) {
+        return
+      }
+
+      syncCanvasSize()
+
+      try {
+        const bitmap = await createImageBitmap(blob)
+        const frameMetrics = computeContainMetrics(bitmap.width, bitmap.height, canvas.width, canvas.height)
+        frameMetricsRef.current = frameMetrics
+        context.clearRect(0, 0, canvas.width, canvas.height)
+        context.drawImage(
+          bitmap,
+          frameMetrics.offsetX,
+          frameMetrics.offsetY,
+          frameMetrics.drawWidth,
+          frameMetrics.drawHeight,
         )
+        bitmap.close()
+        hasFrameRef.current = true
+        setConnectionState('live')
+        drawOverlay()
+      } catch {
+        setConnectionState('error')
       }
-    })
+    },
+    [drawOverlay, syncCanvasSize],
+  )
 
-    const unsubscribeMessage = analysisService.onMessage((result: AnalysisResult) => {
-      if (result.detecciones && result.detecciones.length > 0) {
-        setDetections(result.detecciones)
-      } else {
-        // Solo limpiamos si no nos envían error explícito de frame, 
-        // asumiendo que "alerta: False, detecciones: []" es el caso normal
-        if (!result.error) {
-          setDetections([])
+  useEffect(() => {
+    const monitoringAdapter = cameraSocketRef.current
+    monitoringAdapter.connect()
+
+    const unsubscribeMonitoring = monitoringAdapter.onMessage((snapshot) => {
+      setDelayMs(Date.now() - snapshot.generatedAt)
+      setCameraIds((currentIds) => {
+        const next = new Set(currentIds)
+        snapshot.activeCameraIds.forEach((id) => {
+          next.add(id)
+        })
+
+        if (selectedCameraId) {
+          next.add(selectedCameraId)
         }
-      }
+
+        return Array.from(next)
+      })
     })
 
     return () => {
-      unsubscribeStatus()
-      unsubscribeMessage()
+      unsubscribeMonitoring()
+      monitoringAdapter.disconnect()
     }
-  }, [])
+  }, [selectedCameraId])
 
-  const handleVideoMetadata = useCallback(
-    (e: React.SyntheticEvent<HTMLVideoElement>) => {
-      const video = e.currentTarget
-      setVideoDimensions({ width: video.videoWidth, height: video.videoHeight })
-    },
-    [],
-  )
-
-  const captureAndSendFrame = useCallback(() => {
-    const frameDelay = 1000 / fps
-    const scheduleNext = () => {
-      frameIntervalRef.current = setTimeout(captureAndSendFrame, frameDelay)
-    }
-
-    if (!videoRef.current || !canvasRef.current) return
-
-    if (analysisService.getStatus() !== 'connected') {
-      scheduleNext()
+  useEffect(() => {
+    if (!selectedCameraId) {
       return
     }
 
-    const video = videoRef.current
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
+    const streamAdapter = streamingSocketRef.current
+    hasFrameRef.current = false
+    lastBirdsRef.current = []
+    drawOverlay()
 
-    if (!ctx || video.videoWidth === 0 || video.videoHeight === 0) {
-      scheduleNext()
-      return
-    }
+    streamAdapter.connect(selectedCameraId, { mode: 'viewer' })
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    canvas.toBlob((blob) => {
-      if (blob && analysisService.getStatus() === 'connected') {
-        analysisService.sendFrame(blob)
-        frameCountRef.current++
-      }
-    }, 'image/jpeg', 0.7)
-
-    scheduleNext()
-  }, [fps])
-
-  const startStreaming = useCallback(async () => {
-    try {
-      setStreamError('')
-      setConnectionStatus('connecting')
-
-      if (!selectedDeviceId && devices.length === 0) {
-        throw new Error('No hay cámaras disponibles')
+    const unsubscribeLifecycle = streamAdapter.onLifecycle((event) => {
+      if (event.state === 'connected') {
+        setRetryAttempt(0)
+        setConnectionState(hasFrameRef.current ? 'live' : 'empty')
       }
 
-      // Iniciar stream de video
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          deviceId: selectedDeviceId
-            ? { exact: selectedDeviceId }
-            : undefined,
-        },
-      })
-
-      streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
+      if (event.state === 'retrying') {
+        setRetryAttempt(event.attempt ?? 0)
+        setConnectionState('loading')
       }
 
-      // Conectar al servicio de análisis
-      analysisService.connect(cameraId || 'unknown', (result: AnalysisResult) => {
-        if (result.detecciones && result.detecciones.length > 0) {
-          setDetections(result.detecciones)
-        } else {
-          setDetections([])
-        }
-      })
+      if (event.state === 'disconnected') {
+        setConnectionState('error')
+      }
+    })
 
-      // Esperar a que el video esté listo
-      await new Promise<void>((resolve) => {
-        const checkVideo = () => {
-          if (videoRef.current?.videoWidth && videoRef.current?.videoHeight) {
-            setIsStreaming(true)
-            captureAndSendFrame()
-            resolve()
-          } else {
-            setTimeout(checkVideo, 100)
-          }
-        }
-        checkVideo()
-      })
-    } catch (err) {
-      console.error('Error iniciando stream:', err)
-      const message =
-        err instanceof Error ? err.message : 'Error desconocido'
-      setStreamError(
-        message.includes('Permission')
-          ? 'Permiso denegado para acceder a la cámara'
-          : message,
-      )
-      setConnectionStatus('error')
+    const unsubscribeFrame = streamAdapter.onFrame((frame) => {
+      void drawFrame(frame.blob)
+    })
+
+    const unsubscribeDetection = streamAdapter.onDetection((detection) => {
+      lastBirdsRef.current = detection.birds
+      drawOverlay()
+      if (!hasFrameRef.current) {
+        setConnectionState(detection.birds.length > 0 ? 'live' : 'empty')
+      }
+    })
+
+    const unsubscribeDelay = streamAdapter.onDelay((delay) => {
+      setDelayMs(delay)
+    })
+
+    const unsubscribeError = streamAdapter.onError(() => {
+      setConnectionState('error')
+    })
+
+    return () => {
+      unsubscribeLifecycle()
+      unsubscribeFrame()
+      unsubscribeDetection()
+      unsubscribeDelay()
+      unsubscribeError()
+      streamAdapter.disconnect()
     }
-  }, [selectedDeviceId, devices.length, cameraId, captureAndSendFrame])
+  }, [drawFrame, drawOverlay, selectedCameraId])
 
-  const stopStreaming = useCallback(() => {
-    // Detener captura de frames
-    if (frameIntervalRef.current) {
-      clearTimeout(frameIntervalRef.current)
-      frameIntervalRef.current = null
-    }
+  useEffect(() => {
+    syncCanvasSize()
 
-    // Detener video stream
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop())
-      streamRef.current = null
+    const handleResize = (): void => {
+      syncCanvasSize()
+      drawOverlay()
     }
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [drawOverlay, syncCanvasSize])
+
+  const canViewStream = activeStreamingSet.has(selectedCameraId)
+  const isDelayed = delayMs > REALTIME_CONSTANTS.highLatencyThresholdMs
+
+  const statusLabel = useMemo(() => {
+    if (connectionState === 'loading') {
+      return retryAttempt > 0 ? labels.streamRetryLabel(retryAttempt) : labels.streamStateLoading
     }
 
-    // Desconectar servicio de análisis
-    analysisService.disconnect()
-
-    // Limpiar estado
-    setIsStreaming(false)
-    setDetections([])
-    setConnectionStatus('disconnected')
-    frameCountRef.current = 0
-
-    // Limpiar timer de FPS
-    if (fpsTimerRef.current) {
-      clearInterval(fpsTimerRef.current)
-      fpsTimerRef.current = null
+    if (connectionState === 'error') {
+      return labels.streamStateError
     }
-  }, [])
 
-  const handleDownloadDetection = useCallback(
-    (detection: BirdDetection, index: number) => {
-      // Convertir base64 a blob y descargar
-      const link = document.createElement('a')
-      link.href = detection.foto_base64
-      link.download = `bird-detection-${index}-${detection.especie}.jpg`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    },
-    [],
-  )
+    if (connectionState === 'empty') {
+      return labels.streamStateEmpty
+    }
+
+    return labels.streamStateLive
+  }, [connectionState, retryAttempt])
 
   return (
-    <HomeShell activeTab="cameras">
-      <div className="camera-detail-page">
-        {/* Header */}
-        <div className="camera-detail-header">
-          <button
-            className="camera-detail-back-btn"
-            onClick={() => navigate('/cameras')}
-            aria-label="Volver"
+    <main className="camera-stream-page">
+      <header className="camera-stream-controls">
+        <label className="camera-stream-select-wrap" htmlFor="stream-camera-select">
+          <span>{labels.streamSelectCamera}</span>
+          <select
+            id="stream-camera-select"
+            value={selectedCameraId}
+            onChange={(event) => {
+              const nextCameraId = event.target.value
+              setSelectedCameraId(nextCameraId)
+              if (!nextCameraId) {
+                setConnectionState('empty')
+              }
+            }}
           >
-            <ChevronLeft size={20} />
-          </button>
-          <div className="camera-detail-title-group">
-            <h1 className="camera-detail-title">Vista en Vivo de Cámara</h1>
-            <p className="camera-detail-subtitle">
-              Cámara ID: <code>{cameraId || 'desconocida'}</code>
-            </p>
-          </div>
-          <div className="camera-detail-status-badge">
-            {connectionStatus === 'connecting' && (
-              <>
-                <Loader2 size={16} className="status-icon-spin" />
-                Conectando...
-              </>
-            )}
-            {connectionStatus === 'connected' && (
-              <>
-                <Activity size={16} className="status-icon-pulse" />
-                En Vivo
-              </>
-            )}
-            {connectionStatus === 'error' && (
-              <>
-                <AlertCircle size={16} />
-                Error de Conexión
-              </>
-            )}
-            {(connectionStatus === 'idle' || connectionStatus === 'disconnected') && (
-              <>
-                <Camera size={16} />
-                Desconectado
-              </>
-            )}
-          </div>
+            {cameraIds.length === 0 ? <option value="">{labels.cameraDetailUnknownCamera}</option> : null}
+            {cameraIds.map((cameraId) => (
+              <option key={cameraId} value={cameraId}>
+                {cameraId}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="camera-stream-actions">
+          <Button
+            type="button"
+            onClick={() => {
+              setRotationDeg((current) => (current + 90) % 360)
+            }}
+          >
+            {labels.streamRotate}
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              navigate('/cameras')
+            }}
+          >
+            {labels.streamExit}
+          </Button>
+        </div>
+      </header>
+
+      <section className="camera-stream-stage">
+        <div className="camera-stream-meta">
+          <span className={`camera-stream-status camera-stream-status--${connectionState}`}>{statusLabel}</span>
+          {!canViewStream ? <span className="camera-stream-warning">{labels.streamNoSignal}</span> : null}
+          {isDelayed ? <span className="camera-stream-delay">{labels.streamDelayLabel(Math.floor(delayMs / 1000))}</span> : null}
         </div>
 
-        {/* Error message */}
-        {streamError && (
-          <Card className="camera-detail-error-card">
-            <AlertCircle size={20} />
-            <div>
-              <strong>Error:</strong> {streamError}
+        <div className="camera-stream-canvas-shell" style={{ transform: `rotate(${rotationDeg}deg)` }}>
+          <canvas ref={streamCanvasRef} className="camera-stream-canvas" />
+          <canvas ref={overlayCanvasRef} className="camera-stream-overlay" />
+
+          {connectionState !== 'live' ? (
+            <div className="camera-stream-fallback">
+              <p>{connectionState === 'error' ? labels.streamConnectionError : labels.streamNoSignal}</p>
             </div>
-          </Card>
-        )}
-
-        <div className="camera-detail-content">
-          {/* Left side: Video and controls */}
-          <div className="camera-detail-video-section">
-            {/* Device selector */}
-            {devices.length > 0 && !isStreaming && (
-              <div className="camera-detail-device-selector">
-                <label htmlFor="device-select">Seleccionar cámara:</label>
-                <select
-                  id="device-select"
-                  value={selectedDeviceId}
-                  onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="device-select-input"
-                >
-                  {devices.map((device) => (
-                    <option key={device.deviceId} value={device.deviceId}>
-                      {device.label || `Cámara ${device.deviceId.substring(0, 5)}...`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Video player */}
-            <div className="camera-detail-video-container">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                onLoadedMetadata={handleVideoMetadata}
-                className="camera-detail-video"
-              />
-
-              {/* Overlay with detections */}
-              {videoDimensions.width > 0 && (
-                <>
-                  {detections.map((detection, index) => (
-                    <BirdDetectionCard
-                      key={`${detection.especie}-${index}`}
-                      detection={detection}
-                      index={index}
-                      videoDimensions={videoDimensions}
-                      onImageClick={() => setShowImageDetail(detection)}
-                    />
-                  ))}
-
-                  {/* Live indicator */}
-                  {detections.length > 0 && (
-                    <div className="camera-detail-live-badge">
-                      <span className="live-dot">●</span>
-                      {detections.length} ave{detections.length !== 1 ? 's' : ''} detectada
-                      {detections.length !== 1 ? 's' : ''}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Canvas oculto para captura */}
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-            {/* Controls */}
-            <div className="camera-detail-controls">
-              {!isStreaming ? (
-                <Button
-                  variant="primary"
-                  onClick={startStreaming}
-                  disabled={connectionStatus === 'connecting'}
-                  className="control-button"
-                >
-                  {connectionStatus === 'connecting' ? (
-                    <>
-                      <span className="button-loading" />
-                      Conectando...
-                    </>
-                  ) : (
-                    <>
-                      <Camera size={18} />
-                      Iniciar Análisis
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={stopStreaming}
-                  className="control-button control-button--danger"
-                >
-                  <AlertCircle size={18} />
-                  Detener Análisis
-                </Button>
-              )}
-
-              {/* FPS selector */}
-              <div className="fps-selector">
-                <label htmlFor="fps-input">FPS:</label>
-                <input
-                  id="fps-input"
-                  type="number"
-                  min="1"
-                  max="30"
-                  value={fps}
-                  onChange={(e) => setFps(Math.min(30, Math.max(1, parseInt(e.target.value) || 1)))}
-                  disabled={isStreaming}
-                  className="fps-input"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right side: Detections list and stats */}
-          <div className="camera-detail-sidebar">
-            {/* Statistics */}
-            <DetectionStatsComponent detections={detections} isLive={isStreaming} />
-
-            {/* Detections list */}
-            {detections.length > 0 && (
-              <div className="camera-detail-detections-list">
-                <h3 className="detections-list-title">Detecciones</h3>
-                <div className="detections-scroll">
-                  {detections.map((detection, index) => (
-                    <div
-                      key={`${detection.especie}-${index}-list`}
-                      className="detection-list-item"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleDownloadDetection(detection, index)}
-                      onKeyDown={(e) =>
-                        e.key === 'Enter' && handleDownloadDetection(detection, index)
-                      }
-                    >
-                      <img
-                        src={detection.foto_base64}
-                        alt={detection.especie}
-                        className="detection-list-thumbnail"
-                      />
-                      <div className="detection-list-info">
-                        <div className="detection-list-species">
-                          {detection.especie}
-                        </div>
-                        <div className="detection-list-confidence">
-                          {detection.confianza.toFixed(1)}%
-                        </div>
-                      </div>
-                      <div className="detection-list-download">↓</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          ) : null}
         </div>
-
-        {/* Image detail modal */}
-        {showImageDetail && (
-          <div
-            className="camera-detail-modal-overlay"
-            onClick={() => setShowImageDetail(null)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Escape' && setShowImageDetail(null)}
-          >
-            <div
-              className="camera-detail-modal-content"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowImageDetail(null)}
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-              <img
-                src={showImageDetail.foto_base64}
-                alt={showImageDetail.especie}
-                className="modal-image"
-              />
-              <div className="modal-info">
-                <h3>{showImageDetail.especie}</h3>
-                <p>Confianza: {showImageDetail.confianza.toFixed(2)}%</p>
-                <p>Score Final: {showImageDetail.score_final.toFixed(2)}%</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </HomeShell>
+      </section>
+    </main>
   )
 }

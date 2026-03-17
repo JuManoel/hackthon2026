@@ -38,4 +38,5 @@ export interface CameraListItem {
   readonly region: string
   readonly address: string
   readonly previewUrl?: string | null
+  readonly hasStreaming?: boolean
 }
