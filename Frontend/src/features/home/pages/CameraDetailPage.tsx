@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FC } from 'react'
+import { CameraOff, ChevronLeft, ChevronRight, LogOut, Maximize2, Minimize2, RefreshCw } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { labels } from '@/constants/labels'
 import { Button } from '@/shared/ui/button/Button'
+import { Card } from '@/shared/ui/card/Card'
 import { CameraSocketAdapter } from '@/features/realtime/adapters/CameraSocketAdapter'
 import { StreamingSocketAdapter } from '@/features/realtime/adapters/StreamingSocketAdapter'
 import { REALTIME_CONSTANTS } from '@/features/realtime/adapters/realtime.constants'
 import type { ConnectionState, DetectionBird } from '@/features/realtime/types/realtime.types'
 import { useCameraStreamingAvailability } from '@/features/realtime/hooks/useCameraStreamingAvailability'
+import { HomeShell } from '@/features/home/components/HomeShell'
+import { getStoredToken } from '@/features/auth/services/auth.service'
+import { listCamerasRequest } from '@/features/home/services/cameras.service'
+import type { CameraDto } from '@/features/home/types/camera.types'
 import './CameraDetailPage.css'
 
 interface CameraDetailPageProps {
@@ -21,6 +27,18 @@ type FrameRenderMetrics = {
   offsetY: number
   drawWidth: number
   drawHeight: number
+}
+
+type FullscreenCapableElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void
+  msRequestFullscreen?: () => Promise<void> | void
+}
+
+type FullscreenCapableDocument = Document & {
+  webkitExitFullscreen?: () => Promise<void> | void
+  msExitFullscreen?: () => Promise<void> | void
+  webkitFullscreenElement?: Element | null
+  msFullscreenElement?: Element | null
 }
 
 function toSourceBbox(
@@ -72,6 +90,55 @@ function toConfidencePercent(confidence: number): number {
   return confidence <= 1 ? confidence * 100 : confidence
 }
 
+function toPositiveFrameDimension(value: number | undefined, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.round(value)
+  }
+
+  return fallback
+}
+
+function getFullscreenElement(doc: Document): Element | null {
+  const fullscreenDoc = doc as FullscreenCapableDocument
+  return doc.fullscreenElement ?? fullscreenDoc.webkitFullscreenElement ?? fullscreenDoc.msFullscreenElement ?? null
+}
+
+async function requestElementFullscreen(element: HTMLElement): Promise<void> {
+  const fullscreenElement = element as FullscreenCapableElement
+
+  if (typeof fullscreenElement.requestFullscreen === 'function') {
+    await fullscreenElement.requestFullscreen()
+    return
+  }
+
+  if (typeof fullscreenElement.webkitRequestFullscreen === 'function') {
+    await fullscreenElement.webkitRequestFullscreen()
+    return
+  }
+
+  if (typeof fullscreenElement.msRequestFullscreen === 'function') {
+    await fullscreenElement.msRequestFullscreen()
+  }
+}
+
+async function exitDocumentFullscreen(doc: Document): Promise<void> {
+  const fullscreenDoc = doc as FullscreenCapableDocument
+
+  if (typeof doc.exitFullscreen === 'function') {
+    await doc.exitFullscreen()
+    return
+  }
+
+  if (typeof fullscreenDoc.webkitExitFullscreen === 'function') {
+    await fullscreenDoc.webkitExitFullscreen()
+    return
+  }
+
+  if (typeof fullscreenDoc.msExitFullscreen === 'function') {
+    await fullscreenDoc.msExitFullscreen()
+  }
+}
+
 export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
   const navigate = useNavigate()
   const params = useParams<{ cameraId: string }>()
@@ -80,13 +147,17 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
   const activeStreamingSet = useCameraStreamingAvailability()
   const [selectedCameraId, setSelectedCameraId] = useState(initialCameraId)
   const [cameraIds, setCameraIds] = useState<string[]>(initialCameraId ? [initialCameraId] : [])
+  const [cameraCatalog, setCameraCatalog] = useState<readonly CameraDto[]>([])
   const [connectionState, setConnectionState] = useState<ConnectionState>(initialCameraId ? 'loading' : 'empty')
   const [retryAttempt, setRetryAttempt] = useState(0)
   const [delayMs, setDelayMs] = useState(0)
-  const [rotationDeg, setRotationDeg] = useState(0)
+  const [reloadToken, setReloadToken] = useState(0)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
+  const canvasShellRef = useRef<HTMLDivElement | null>(null)
   const streamCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const overlayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const cameraFrameSizeByIdRef = useRef<Record<string, { width: number; height: number }>>({})
   const frameMetricsRef = useRef<FrameRenderMetrics>({
     sourceWidth: 1,
     sourceHeight: 1,
@@ -104,7 +175,9 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
     document.title = labels.streamPageTitle
   }, [])
 
-  const syncCanvasSize = useCallback(() => {
+  const fallbackDimensions = useMemo(() => ({ width: 1280, height: 720 }), [])
+
+  const syncCanvasDimensions = useCallback((frameWidth: number, frameHeight: number) => {
     const streamCanvas = streamCanvasRef.current
     const overlayCanvas = overlayCanvasRef.current
 
@@ -112,13 +185,8 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
       return
     }
 
-    const rect = streamCanvas.getBoundingClientRect()
-    const width = Math.floor(rect.width)
-    const height = Math.floor(rect.height)
-
-    if (width <= 0 || height <= 0) {
-      return
-    }
+    const width = Math.max(1, Math.floor(frameWidth))
+    const height = Math.max(1, Math.floor(frameHeight))
 
     if (streamCanvas.width !== width || streamCanvas.height !== height) {
       streamCanvas.width = width
@@ -130,13 +198,7 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
       overlayCanvas.height = height
     }
 
-    const previousMetrics = frameMetricsRef.current
-    frameMetricsRef.current = computeContainMetrics(
-      previousMetrics.sourceWidth,
-      previousMetrics.sourceHeight,
-      width,
-      height,
-    )
+    frameMetricsRef.current = computeContainMetrics(width, height, width, height)
   }, [])
 
   const drawOverlay = useCallback(() => {
@@ -184,6 +246,11 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
     })
   }, [])
 
+  useEffect(() => {
+    syncCanvasDimensions(fallbackDimensions.width, fallbackDimensions.height)
+    drawOverlay()
+  }, [drawOverlay, fallbackDimensions, syncCanvasDimensions])
+
   const drawFrame = useCallback(
     async (blob: Blob): Promise<void> => {
       const canvas = streamCanvasRef.current
@@ -196,20 +263,19 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
         return
       }
 
-      syncCanvasSize()
-
       try {
         const bitmap = await createImageBitmap(blob)
-        const frameMetrics = computeContainMetrics(bitmap.width, bitmap.height, canvas.width, canvas.height)
+        syncCanvasDimensions(bitmap.width, bitmap.height)
+        const frameMetrics = computeContainMetrics(bitmap.width, bitmap.height, bitmap.width, bitmap.height)
         frameMetricsRef.current = frameMetrics
+        if (selectedCameraId) {
+          cameraFrameSizeByIdRef.current[selectedCameraId] = {
+            width: bitmap.width,
+            height: bitmap.height,
+          }
+        }
         context.clearRect(0, 0, canvas.width, canvas.height)
-        context.drawImage(
-          bitmap,
-          frameMetrics.offsetX,
-          frameMetrics.offsetY,
-          frameMetrics.drawWidth,
-          frameMetrics.drawHeight,
-        )
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
         bitmap.close()
         hasFrameRef.current = true
         setConnectionState('live')
@@ -218,8 +284,53 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
         setConnectionState('error')
       }
     },
-    [drawOverlay, syncCanvasSize],
+    [drawOverlay, selectedCameraId, syncCanvasDimensions],
   )
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadCameras = async (): Promise<void> => {
+      const token = getStoredToken()
+      if (!token) {
+        return
+      }
+
+      try {
+        const response = await listCamerasRequest(token, { page: 0, size: 200 })
+        if (!isMounted) {
+          return
+        }
+
+        setCameraCatalog(response.content)
+        setCameraIds((currentIds) => {
+          const next = new Set(currentIds)
+          response.content.forEach((camera) => {
+            next.add(camera.id)
+          })
+
+          if (initialCameraId) {
+            next.add(initialCameraId)
+          }
+
+          return Array.from(next)
+        })
+
+        if (!initialCameraId && response.content.length > 0) {
+          setSelectedCameraId((current) => current || response.content[0].id)
+          setConnectionState((current) => (current === 'empty' ? 'loading' : current))
+        }
+      } catch {
+        // Si falla, se mantiene el listado proveniente de monitoreo en tiempo real.
+      }
+    }
+
+    void loadCameras()
+
+    return () => {
+      isMounted = false
+    }
+  }, [initialCameraId])
 
   useEffect(() => {
     const monitoringAdapter = cameraSocketRef.current
@@ -253,6 +364,8 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
     }
 
     const streamAdapter = streamingSocketRef.current
+    const knownFrameSize = cameraFrameSizeByIdRef.current[selectedCameraId] ?? fallbackDimensions
+    syncCanvasDimensions(knownFrameSize.width, knownFrameSize.height)
     hasFrameRef.current = false
     lastBirdsRef.current = []
     drawOverlay()
@@ -281,6 +394,13 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
 
     const unsubscribeDetection = streamAdapter.onDetection((detection) => {
       lastBirdsRef.current = detection.birds
+      const frameWidth = toPositiveFrameDimension(detection.frameWidth, frameMetricsRef.current.sourceWidth)
+      const frameHeight = toPositiveFrameDimension(detection.frameHeight, frameMetricsRef.current.sourceHeight)
+      cameraFrameSizeByIdRef.current[selectedCameraId] = {
+        width: frameWidth,
+        height: frameHeight,
+      }
+      syncCanvasDimensions(frameWidth, frameHeight)
       drawOverlay()
       if (!hasFrameRef.current) {
         setConnectionState(detection.birds.length > 0 ? 'live' : 'empty')
@@ -303,22 +423,98 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
       unsubscribeError()
       streamAdapter.disconnect()
     }
-  }, [drawFrame, drawOverlay, selectedCameraId])
+  }, [drawFrame, drawOverlay, fallbackDimensions, reloadToken, selectedCameraId, syncCanvasDimensions])
+
+  const cameraNameById = useMemo(() => {
+    const nextMap = new Map<string, string>()
+    cameraCatalog.forEach((camera) => {
+      nextMap.set(camera.id, camera.name)
+    })
+    return nextMap
+  }, [cameraCatalog])
+
+  const cameraOptions = useMemo(
+    () =>
+      cameraIds.map((id) => ({
+        id,
+        name: cameraNameById.get(id) ?? labels.streamUnnamedCamera,
+      })),
+    [cameraIds, cameraNameById],
+  )
+
+  const hasMultipleCameras = cameraOptions.length > 1
+
+  const switchCamera = useCallback(
+    (offset: -1 | 1): void => {
+      if (!hasMultipleCameras) {
+        return
+      }
+
+      const currentIndex = cameraOptions.findIndex((camera) => camera.id === selectedCameraId)
+      const baseIndex = currentIndex >= 0 ? currentIndex : 0
+      const nextIndex = (baseIndex + offset + cameraOptions.length) % cameraOptions.length
+      const nextCameraId = cameraOptions[nextIndex]?.id
+
+      if (!nextCameraId || nextCameraId === selectedCameraId) {
+        return
+      }
+
+      setSelectedCameraId(nextCameraId)
+      setConnectionState('loading')
+    },
+    [cameraOptions, hasMultipleCameras, selectedCameraId],
+  )
+
+  const reloadStream = useCallback((): void => {
+    if (!selectedCameraId) {
+      return
+    }
+
+    hasFrameRef.current = false
+    lastBirdsRef.current = []
+    setRetryAttempt(0)
+    setConnectionState('loading')
+    drawOverlay()
+    setReloadToken((current) => current + 1)
+  }, [drawOverlay, selectedCameraId])
+
+  const toggleFullscreen = useCallback((): void => {
+    const shell = canvasShellRef.current
+    if (!shell) {
+      return
+    }
+
+    const activeFullscreenElement = getFullscreenElement(document)
+
+    if (activeFullscreenElement === shell) {
+      void exitDocumentFullscreen(document)
+      return
+    }
+
+    void requestElementFullscreen(shell)
+  }, [])
 
   useEffect(() => {
-    syncCanvasSize()
+    const onFullscreenChange = (): void => {
+      const shell = canvasShellRef.current
+      if (!shell) {
+        setIsFullscreen(false)
+        return
+      }
 
-    const handleResize = (): void => {
-      syncCanvasSize()
-      drawOverlay()
+      setIsFullscreen(getFullscreenElement(document) === shell)
     }
 
-    window.addEventListener('resize', handleResize)
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange)
+    document.addEventListener('MSFullscreenChange', onFullscreenChange)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', onFullscreenChange)
     }
-  }, [drawOverlay, syncCanvasSize])
+  }, [])
 
   const canViewStream = activeStreamingSet.has(selectedCameraId)
   const isDelayed = delayMs > REALTIME_CONSTANTS.highLatencyThresholdMs
@@ -339,69 +535,144 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
     return labels.streamStateLive
   }, [connectionState, retryAttempt])
 
+  const showNoSignalBadge = !canViewStream || connectionState !== 'live'
+  const noConnectionState = connectionState !== 'live'
+
+  const connectionTooltip = useMemo(() => {
+    const parts = [showNoSignalBadge ? labels.streamNoSignal : statusLabel]
+
+    if (isDelayed) {
+      parts.push(labels.streamDelayLabel(Math.floor(delayMs / 1000)))
+    }
+
+    return parts.join(' | ')
+  }, [isDelayed, delayMs, showNoSignalBadge, statusLabel])
+
   return (
-    <main className="camera-stream-page">
-      <header className="camera-stream-controls">
-        <label className="camera-stream-select-wrap" htmlFor="stream-camera-select">
-          <span>{labels.streamSelectCamera}</span>
-          <select
-            id="stream-camera-select"
-            value={selectedCameraId}
-            onChange={(event) => {
-              const nextCameraId = event.target.value
-              setSelectedCameraId(nextCameraId)
-              if (!nextCameraId) {
-                setConnectionState('empty')
-              }
-            }}
-          >
-            {cameraIds.length === 0 ? <option value="">{labels.cameraDetailUnknownCamera}</option> : null}
-            {cameraIds.map((cameraId) => (
-              <option key={cameraId} value={cameraId}>
-                {cameraId}
-              </option>
-            ))}
-          </select>
-        </label>
+    <HomeShell activeTab="cameras" contentClassName="home-shell-content--top">
+      <div className="cameras-page-wrap camera-stream-wrap">
+        <header className="cameras-page-intro camera-stream-intro">
+          <div className="camera-stream-top-actions">
+            <Button
+              type="button"
+              className="camera-stream-top-button"
+              onClick={() => {
+                navigate('/cameras')
+              }}
+            >
+              <LogOut size={15} aria-hidden="true" />
+              <span>{labels.streamExit}</span>
+            </Button>
 
-        <div className="camera-stream-actions">
-          <Button
-            type="button"
-            onClick={() => {
-              setRotationDeg((current) => (current + 90) % 360)
-            }}
-          >
-            {labels.streamRotate}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              navigate('/cameras')
-            }}
-          >
-            {labels.streamExit}
-          </Button>
-        </div>
-      </header>
+            <h1 className="cameras-page-title">{labels.streamViewerTitle}</h1>
 
-      <section className="camera-stream-stage">
-        <div className="camera-stream-meta">
-          <span className={`camera-stream-status camera-stream-status--${connectionState}`}>{statusLabel}</span>
-          {!canViewStream ? <span className="camera-stream-warning">{labels.streamNoSignal}</span> : null}
-          {isDelayed ? <span className="camera-stream-delay">{labels.streamDelayLabel(Math.floor(delayMs / 1000))}</span> : null}
-        </div>
+            <Button
+              type="button"
+              className="camera-stream-top-button"
+              disabled={!selectedCameraId}
+              onClick={reloadStream}
+            >
+              <RefreshCw size={15} aria-hidden="true" />
+              <span>{labels.streamReloadAction}</span>
+            </Button>
+          </div>
+        </header>
 
-        <div className="camera-stream-canvas-shell" style={{ transform: `rotate(${rotationDeg}deg)` }}>
-          <canvas ref={streamCanvasRef} className="camera-stream-canvas" />
-          <canvas ref={overlayCanvasRef} className="camera-stream-overlay" />
+        <div className="camera-stream-stage">
+          <div ref={canvasShellRef} className="camera-stream-canvas-shell">
+            <Button
+              type="button"
+              className="camera-stream-canvas-action"
+              title={isFullscreen ? labels.streamExitFullscreen : labels.streamEnterFullscreen}
+              aria-label={isFullscreen ? labels.streamExitFullscreen : labels.streamEnterFullscreen}
+              onClick={toggleFullscreen}
+            >
+              {isFullscreen ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
+            </Button>
 
-          {connectionState !== 'live' ? (
-            <div className="camera-stream-fallback">
-              <p>{connectionState === 'error' ? labels.streamConnectionError : labels.streamNoSignal}</p>
+            <div className="camera-stream-canvas-frame">
+              <canvas ref={streamCanvasRef} className="camera-stream-canvas" />
+              <canvas ref={overlayCanvasRef} className="camera-stream-overlay" />
+
+              {noConnectionState ? (
+                <div className="camera-stream-fallback">
+                  <span className="camera-stream-fallback-icon" aria-hidden="true">
+                    <CameraOff size={44} strokeWidth={1.8} />
+                  </span>
+                  <p>{labels.streamNoSignal}</p>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+
+            {showNoSignalBadge ? (
+              <span
+                className="camera-stream-status-badge camera-stream-status-badge--empty"
+                title={connectionTooltip}
+              >
+                {labels.streamNoSignal}
+              </span>
+            ) : null}
+          </div>
+
+          <Card className="camera-stream-controls-card">
+            <div className="camera-stream-picker">
+              <Button
+                type="button"
+                className="camera-stream-icon-button"
+                disabled={!hasMultipleCameras}
+                title={!hasMultipleCameras ? labels.streamSwitchUnavailable : labels.streamPreviousCamera}
+                aria-label={labels.streamPreviousCamera}
+                onClick={() => {
+                  switchCamera(-1)
+                }}
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+              </Button>
+
+              <label className="camera-stream-select-wrap" htmlFor="stream-camera-select">
+                <span>{labels.streamSelectCamera}</span>
+                <select
+                  id="stream-camera-select"
+                  value={selectedCameraId}
+                  onChange={(event) => {
+                    const nextCameraId = event.target.value
+                    setSelectedCameraId(nextCameraId)
+                    setConnectionState(nextCameraId ? 'loading' : 'empty')
+                  }}
+                >
+                  {cameraOptions.length === 0 ? <option value="">{labels.cameraDetailUnknownCamera}</option> : null}
+                  {cameraOptions.map((camera) => (
+                    <option key={camera.id} value={camera.id}>
+                      {camera.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <Button
+                type="button"
+                className="camera-stream-icon-button"
+                disabled={!hasMultipleCameras}
+                title={!hasMultipleCameras ? labels.streamSwitchUnavailable : labels.streamNextCamera}
+                aria-label={labels.streamNextCamera}
+                onClick={() => {
+                  switchCamera(1)
+                }}
+              >
+                <ChevronRight size={16} aria-hidden="true" />
+              </Button>
+            </div>
+
+            <div className="camera-stream-controls-footer">
+              <div className="camera-stream-meta">
+                {isDelayed ? (
+                  <span className="camera-stream-delay">{labels.streamDelayLabel(Math.floor(delayMs / 1000))}</span>
+                ) : null}
+              </div>
+            </div>
+          </Card>
         </div>
-      </section>
-    </main>
+      </div>
+    </HomeShell>
   )
 }
