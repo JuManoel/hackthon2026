@@ -56,11 +56,14 @@ public class BirdController {
 	}
 
 	@GetMapping("")
-	@Operation(summary = "Obtener todos los pájaros (paginado)", description = "Retorna una lista paginada de todos los pájaros registrados en el sistema")
+	@Operation(
+		summary = "Obtener todos los pájaros (paginado)",
+		description = "Retorna una lista paginada de todos los pájaros registrados en el sistema"
+	)
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
-			@ApiResponse(responseCode = "400", description = "Parámetros de paginación inválidos"),
-			@ApiResponse(responseCode = "401", description = "No autenticado")
+		@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
+		@ApiResponse(responseCode = "400", description = "Parámetros de paginación inválidos"),
+		@ApiResponse(responseCode = "401", description = "No autenticado")
 	})
 	public ResponseEntity<Page<GetBirdDTO>> getAllBirds(
 			@Parameter(description = "Configuración de paginación (page, size, sort)") @PageableDefault(size = 20) Pageable pageable) {
@@ -68,10 +71,13 @@ public class BirdController {
 	}
 
 	@GetMapping("/camera/{cameraId}")
-	@Operation(summary = "Obtener pájaros por cámara", description = "Retorna todos los pájaros detectados por una cámara específica")
+	@Operation(
+		summary = "Obtener pájaros por cámara",
+		description = "Retorna todos los pájaros detectados por una cámara específica"
+	)
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
-			@ApiResponse(responseCode = "401", description = "No autenticado")
+		@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
+		@ApiResponse(responseCode = "401", description = "No autenticado")
 	})
 	public ResponseEntity<List<GetBirdDTO>> getBirdsByCamera(
 			@Parameter(description = "ID de la cámara") @PathVariable String cameraId) {
@@ -79,10 +85,13 @@ public class BirdController {
 	}
 
 	@GetMapping("/species/{speciesId}")
-	@Operation(summary = "Obtener pájaros por especie", description = "Retorna todos los pájaros de una especie específica")
+	@Operation(
+		summary = "Obtener pájaros por especie",
+		description = "Retorna todos los pájaros de una especie específica"
+	)
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
-			@ApiResponse(responseCode = "401", description = "No autenticado")
+		@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
+		@ApiResponse(responseCode = "401", description = "No autenticado")
 	})
 	public ResponseEntity<List<GetBirdDTO>> getBirdsBySpecies(
 			@Parameter(description = "ID de la especie") @PathVariable String speciesId) {
@@ -90,10 +99,13 @@ public class BirdController {
 	}
 
 	@GetMapping("/camera/{cameraId}/range")
-	@Operation(summary = "Obtener pájaros por cámara en rango de fechas", description = "Retorna los pájaros detectados por una cámara dentro de un rango de fechas")
+	@Operation(
+		summary = "Obtener pájaros por cámara en rango de fechas",
+		description = "Retorna los pájaros detectados por una cámara dentro de un rango de fechas"
+	)
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
-			@ApiResponse(responseCode = "401", description = "No autenticado")
+		@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
+		@ApiResponse(responseCode = "401", description = "No autenticado")
 	})
 	public ResponseEntity<List<GetBirdDTO>> getBirdsByCameraAndDateRange(
 			@Parameter(description = "ID de la cámara") @PathVariable String cameraId,
@@ -103,10 +115,13 @@ public class BirdController {
 	}
 
 	@GetMapping("/range")
-	@Operation(summary = "Obtener pájaros en rango de fechas", description = "Retorna todos los pájaros detectados dentro de un rango de fechas")
+	@Operation(
+		summary = "Obtener pájaros en rango de fechas",
+		description = "Retorna todos los pájaros detectados dentro de un rango de fechas"
+	)
 	@ApiResponses(value = {
-			@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
-			@ApiResponse(responseCode = "401", description = "No autenticado")
+		@ApiResponse(responseCode = "200", description = "Lista de pájaros"),
+		@ApiResponse(responseCode = "401", description = "No autenticado")
 	})
 	public ResponseEntity<List<GetBirdDTO>> getBirdsByDateRange(
 			@Parameter(description = "Fecha y hora de inicio (ISO 8601)") @RequestParam(value = "start_date", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,

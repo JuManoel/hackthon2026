@@ -43,10 +43,6 @@ services:
       # DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-Hackthon2026*}@database:5432/${POSTGRES_DB:-hackathon}
       SUPABASE_TABLE: ${SUPABASE_TABLE:-avistamientos}
       PYTHONUNBUFFERED: "1"
-      JAVA_SERVICE_URL: "http://backend-java:8080" # <-- Nueva linea para conexion Docker interna
-    depends_on:
-      database:
-        condition: service_healthy
     ports:
       - "${PYTHON_PORT_EXTERNAL:-8000}:8000"
     restart: unless-stopped

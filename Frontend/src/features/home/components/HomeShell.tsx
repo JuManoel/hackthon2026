@@ -2,6 +2,7 @@ import type { FC, ReactNode } from 'react'
 import { Camera, House, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
+import { BirdHammerChat } from '@/components/chat/BirdHammerChat'
 import { labels } from '@/constants/labels'
 import '@/features/home/home.css'
 
@@ -58,6 +59,8 @@ export const HomeShell: FC<HomeShellProps> = ({ activeTab, children, contentClas
       </header>
 
       <section className={contentClasses}>{children}</section>
+
+      <BirdHammerChat />
 
       <footer className={footerClasses}>
         <nav className="home-shell-nav" aria-label={labels.homeNavAriaLabel}>

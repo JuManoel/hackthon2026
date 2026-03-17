@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState, type FC, type SyntheticEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { CameraOff, ShieldAlert } from 'lucide-react'
 
 import { labels } from '@/constants/labels'
