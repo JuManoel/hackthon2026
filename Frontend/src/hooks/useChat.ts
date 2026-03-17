@@ -106,7 +106,7 @@ export function useChat(): UseChatResult {
     }, CHAT_DISABLED_TRANSITION_MS)
 
     try {
-      const response = await sendMessageToGemini(normalizedMessage)
+      const response = await sendMessageToGemini(normalizedMessage, messages)
 
       if (requestSerial !== requestSerialRef.current) {
         return

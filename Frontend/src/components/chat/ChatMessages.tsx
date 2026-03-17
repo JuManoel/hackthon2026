@@ -20,7 +20,10 @@ export const ChatMessages: FC<ChatMessagesProps> = ({ messages, showTypingIndica
       <ul className={`bird-chat-message-list ${showInitialState ? 'is-initial' : ''}`.trim()}>
         {showInitialState ? (
           <li className="bird-chat-initial-state">
-            <p className="bird-chat-initial-greeting">{labels.chatInitialGreeting}</p>
+            <p className="bird-chat-initial-greeting">
+              <strong>{labels.chatInitialGreetingBold}</strong>
+              {` ${labels.chatInitialGreetingRest}`}
+            </p>
             <img className="bird-chat-initial-bird" src="/bird-init.webp" alt={labels.chatInitialBirdAlt} />
           </li>
         ) : null}

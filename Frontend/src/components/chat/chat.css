@@ -211,7 +211,7 @@
   color: var(--color-neutral-900);
   font-size: clamp(28px, 4.2vw, 48px);
   line-height: 1.15;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .bird-chat-initial-bird {
@@ -241,8 +241,8 @@
   border-radius: 16px;
   font-size: var(--text-body-size);
   line-height: var(--text-body-line);
-  white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .bird-chat-message-bubble.is-user {
@@ -256,6 +256,144 @@
   background: var(--color-neutral-0);
   border: 1px solid var(--color-neutral-300);
   border-bottom-left-radius: 4px;
+}
+
+.bird-chat-plain-text {
+  margin: 0;
+}
+
+.bird-chat-markdown {
+  display: block;
+}
+
+.bird-chat-markdown > :first-child {
+  margin-top: 0;
+}
+
+.bird-chat-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.bird-chat-markdown p {
+  margin: 0;
+}
+
+.bird-chat-markdown p + p {
+  margin-top: 8px;
+}
+
+.bird-chat-markdown h1,
+.bird-chat-markdown h2,
+.bird-chat-markdown h3,
+.bird-chat-markdown h4,
+.bird-chat-markdown h5,
+.bird-chat-markdown h6 {
+  margin: 0 0 8px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: inherit;
+}
+
+.bird-chat-markdown h1 {
+  font-size: 1.125rem;
+}
+
+.bird-chat-markdown h2 {
+  font-size: 1rem;
+}
+
+.bird-chat-markdown h3,
+.bird-chat-markdown h4,
+.bird-chat-markdown h5,
+.bird-chat-markdown h6 {
+  font-size: 0.95rem;
+}
+
+.bird-chat-markdown ul,
+.bird-chat-markdown ol {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.bird-chat-markdown ul {
+  list-style: disc;
+}
+
+.bird-chat-markdown ol {
+  list-style: decimal;
+}
+
+.bird-chat-markdown li {
+  margin: 0;
+}
+
+.bird-chat-markdown li + li {
+  margin-top: 4px;
+}
+
+.bird-chat-markdown strong {
+  font-weight: 700;
+}
+
+.bird-chat-markdown em {
+  font-style: italic;
+}
+
+.bird-chat-markdown a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bird-chat-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--color-neutral-300);
+  margin: 10px 0;
+}
+
+.bird-chat-markdown blockquote {
+  margin: 8px 0 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--color-neutral-300);
+  opacity: 0.9;
+}
+
+.bird-chat-message-bubble.is-assistant h1,
+.bird-chat-message-bubble.is-assistant h2,
+.bird-chat-message-bubble.is-assistant h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.bird-chat-message-bubble.is-assistant p + p {
+  margin-top: 6px;
+}
+
+.bird-chat-message-bubble.is-assistant ul,
+.bird-chat-message-bubble.is-assistant ol {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
+
+.bird-chat-message-bubble.is-assistant li + li {
+  margin-top: 2px;
+}
+
+.bird-chat-message-bubble.is-assistant strong {
+  font-weight: var(--text-label-lg-weight);
+}
+
+.bird-chat-message-bubble.is-assistant a {
+  color: var(--color-brand-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bird-chat-highlight {
+  color: #e02424;
+  font-weight: 800;
 }
 
 .bird-chat-message-avatar-image {
