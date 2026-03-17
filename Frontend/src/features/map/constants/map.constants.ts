@@ -20,7 +20,7 @@ export const MAP_CONSTANTS = {
   birdPointRadiusPixels: 4,
   birdPointColor: '#b5161b',
   birdPointFillOpacity: 0.46,
-  caldasHighlightColor: '#c1121f',
+  caldasHighlightColor: '#2f9e44',
   caldasHighlightFillOpacity: 0.03,
   mockRefreshIntervalMs: 8000,
   positronTileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',

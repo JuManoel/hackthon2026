@@ -62,14 +62,19 @@ def init_models():
     """Inicializa el detector YOLO y el clasificador ResNet18 con pesos entrenados."""
     global detector, clasificador
 
-    if not os.path.exists(RUTA_MODELO_DETECTOR):
-        raise RuntimeError(f"Falta el archivo del modelo detector: {RUTA_MODELO_DETECTOR}")
-
-    if not os.path.exists(RUTA_MODELO_CLASIFICADOR):
-        raise RuntimeError(f"Falta el archivo del modelo clasificador: {RUTA_MODELO_CLASIFICADOR}")
-
-    logger.info(f"Cargando detector YOLO desde: {RUTA_MODELO_DETECTOR}")
-    detector = YOLO(RUTA_MODELO_DETECTOR)
+    # En entornos de desarrollo/hackathon a veces los pesos no se incluyen en el repo.
+    # Preferimos levantar el servicio con fallbacks razonables en vez de fallar al iniciar.
+    if os.path.exists(RUTA_MODELO_DETECTOR):
+        logger.info(f"Cargando detector YOLO desde: {RUTA_MODELO_DETECTOR}")
+        detector = YOLO(RUTA_MODELO_DETECTOR)
+    else:
+        fallback_detector = "yolo11n.pt"
+        logger.warning(
+            "No se encontró el modelo detector en '%s'. Usando fallback '%s' (se descargará si hace falta).",
+            RUTA_MODELO_DETECTOR,
+            fallback_detector,
+        )
+        detector = YOLO(fallback_detector)
     
     logger.info("Cargando clasificador ResNet18 con pesos entrenados...")
     clasificador = resnet18(weights=None)
@@ -78,30 +83,35 @@ def init_models():
     num_clases = 100
     clasificador.fc = torch.nn.Linear(clasificador.fc.in_features, num_clases)
     
-    # Cargar los pesos entrenados de best.pt
-    try:
-        checkpoint = torch.load(RUTA_MODELO_CLASIFICADOR, map_location=device)
+    # Cargar los pesos entrenados del clasificador si están disponibles.
+    if not os.path.exists(RUTA_MODELO_CLASIFICADOR):
+        logger.warning(
+            "No se encontró el modelo clasificador en '%s'. El clasificador quedará sin pesos entrenados.",
+            RUTA_MODELO_CLASIFICADOR,
+        )
+    else:
+        try:
+            checkpoint = torch.load(RUTA_MODELO_CLASIFICADOR, map_location=device)
         
-        # Extraer state_dict del checkpoint
-        if isinstance(checkpoint, dict):
-            if 'model_state' in checkpoint:
-                state_dict = checkpoint['model_state']
-            elif 'state_dict' in checkpoint:
-                state_dict = checkpoint['state_dict']
-            elif 'model' in checkpoint:
-                state_dict = checkpoint['model']
+            # Extraer state_dict del checkpoint
+            if isinstance(checkpoint, dict):
+                if 'model_state' in checkpoint:
+                    state_dict = checkpoint['model_state']
+                elif 'state_dict' in checkpoint:
+                    state_dict = checkpoint['state_dict']
+                elif 'model' in checkpoint:
+                    state_dict = checkpoint['model']
+                else:
+                    state_dict = checkpoint
             else:
                 state_dict = checkpoint
-        else:
-            state_dict = checkpoint
         
-        # Cargar los pesos con strict=False para permitir discrepancias menores
-        clasificador.load_state_dict(state_dict, strict=False)
-        logger.info("Pesos del modelo clasificador cargados correctamente")
-    except Exception as e:
-        logger.warning(f"No se pudieron cargar los pesos de {RUTA_MODELO_CLASIFICADOR}: {e}")
-        logger.info("Usando modelo ResNet18 pre-entrenado con 100 clases")
-        # No hacemos fallback porque ya modificamos la arquitectura
+            # Cargar los pesos con strict=False para permitir discrepancias menores
+            clasificador.load_state_dict(state_dict, strict=False)
+            logger.info("Pesos del modelo clasificador cargados correctamente")
+        except Exception as e:
+            logger.warning("No se pudieron cargar los pesos de '%s': %s", RUTA_MODELO_CLASIFICADOR, e)
+            # Nos quedamos con el modelo inicializado (sin pesos entrenados).
     
     clasificador = clasificador.to(device)
     clasificador.eval()
