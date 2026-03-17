@@ -17,13 +17,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class ChatService {
 
-    @Value("${gemini.api.key}")
+    @Value("${openai.api.key}")
     private String apiKey;
 
     @Value("${python.backend.url:http://localhost:8000}")
     private String pythonBackendUrl;
 
-    private static final String MODEL = "gemini-2.5-flash";
+    private static final String MODEL = "gpt-4o-mini";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final int MAX_FUNCTION_CALLS = 3;
 
@@ -36,61 +36,63 @@ public class ChatService {
         try {
             List<Map<String, Object>> conversationHistory = new ArrayList<>();
 
+            // System prompt
+            conversationHistory.add(Map.of("role", "system", "content", getSystemPrompt()));
+
             // Add user message with optional image
             Map<String, Object> userMessage = buildUserMessage(normalizedMessage, image);
             conversationHistory.add(userMessage);
 
-            // Call Gemini with function calling capability
-            return callGeminiWithFunctionCalling(conversationHistory, image);
+            // Call OpenAI with function calling capability
+            return callOpenAIWithFunctionCalling(conversationHistory, image);
         } catch (Exception ex) {
             return "Tororoi Chat no pudo responder en este momento.";
         }
     }
 
     private Map<String, Object> buildUserMessage(String text, MultipartFile image) throws Exception {
-        List<Map<String, Object>> parts = new ArrayList<>();
+        List<Map<String, Object>> content = new ArrayList<>();
 
         if (text != null && !text.isEmpty()) {
-            parts.add(Map.of("text", text));
+            content.add(Map.of("type", "text", "text", text));
         }
 
         if (image != null && !image.isEmpty()) {
             String base64Image = Base64.getEncoder().encodeToString(image.getBytes());
-            parts.add(Map.of(
-                    "inline_data", Map.of(
-                            "mime_type", image.getContentType(),
-                            "data", base64Image)));
+            String dataUrl = "data:" + image.getContentType() + ";base64," + base64Image;
+            content.add(Map.of(
+                    "type", "image_url",
+                    "image_url", Map.of("url", dataUrl)));
         }
 
         return Map.of(
                 "role", "user",
-                "parts", parts);
+                "content", content);
     }
 
-    private String callGeminiWithFunctionCalling(List<Map<String, Object>> conversationHistory, MultipartFile image) {
+    private String callOpenAIWithFunctionCalling(List<Map<String, Object>> conversationHistory, MultipartFile image) {
         if (apiKey == null || apiKey.isBlank()) {
-            return "La configuración de Tororoi Chat no está completa (falta la API key de Gemini).";
+            return "La configuración de Tororoi Chat no está completa (falta la API key de OpenAI).";
         }
 
         WebClient client = WebClient.builder()
-                .baseUrl("https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent")
+                .baseUrl("https://api.openai.com/v1/chat/completions")
+                .defaultHeader("Authorization", "Bearer " + apiKey)
                 .build();
 
         int functionCallCount = 0;
 
         while (functionCallCount < MAX_FUNCTION_CALLS) {
             try {
-                // Build request with system instruction and tools
+                // Build request
                 Map<String, Object> requestBody = Map.of(
-                        "contents", conversationHistory,
-                        "system_instruction", Map.of(
-                                "parts", List.of(Map.of("text", getSystemPrompt()))),
+                        "model", MODEL,
+                        "messages", conversationHistory,
                         "tools", List.of(Map.of(
-                                "function_declarations", List.of(
-                                        buildAnalyzeBirdImageTool()))));
+                                "type", "function",
+                                "function", buildAnalyzeBirdImageTool())));
 
                 String response = client.post()
-                        .uri(uriBuilder -> uriBuilder.queryParam("key", apiKey).build())
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(requestBody)
                         .retrieve()
@@ -102,38 +104,32 @@ public class ChatService {
                 }
 
                 JsonNode root = OBJECT_MAPPER.readTree(response);
-                JsonNode candidate = root.path("candidates").path(0);
-                JsonNode content = candidate.path("content");
-                JsonNode parts = content.path("parts");
+                JsonNode messageNode = root.path("choices").path(0).path("message");
 
                 // Check if it's a function call
-                JsonNode firstPart = parts.path(0);
-                if (firstPart.has("functionCall")) {
+                if (messageNode.has("tool_calls") && messageNode.path("tool_calls").isArray()
+                        && messageNode.path("tool_calls").size() > 0) {
                     functionCallCount++;
 
-                    JsonNode functionCall = firstPart.path("functionCall");
-                    String functionName = functionCall.path("name").asText();
+                    // Add assistant's tool call message to history to maintain context
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> assistantMessage = OBJECT_MAPPER.convertValue(messageNode, Map.class);
+                    conversationHistory.add(assistantMessage);
+
+                    JsonNode toolCall = messageNode.path("tool_calls").path(0);
+                    String functionName = toolCall.path("function").path("name").asText();
+                    String toolCallId = toolCall.path("id").asText();
 
                     if ("analyze_bird_image".equals(functionName)) {
                         // Execute the function
                         String functionResult = executeBirdImageAnalysis(image);
 
-                        // Add model's function call to history
-                        conversationHistory.add(Map.of(
-                                "role", "model",
-                                "parts", List.of(Map.of(
-                                        "functionCall", Map.of(
-                                                "name", functionName,
-                                                "args", functionCall.path("args"))))));
-
                         // Add function response to history
                         conversationHistory.add(Map.of(
-                                "role", "function",
-                                "parts", List.of(Map.of(
-                                        "functionResponse", Map.of(
-                                                "name", functionName,
-                                                "response", Map.of(
-                                                        "result", functionResult))))));
+                                "role", "tool",
+                                "tool_call_id", toolCallId,
+                                "name", functionName,
+                                "content", functionResult));
 
                         // Continue the loop to get final response
                         continue;
@@ -141,9 +137,9 @@ public class ChatService {
                 }
 
                 // It's a text response - return it
-                JsonNode textNode = firstPart.path("text");
-                if (textNode.isTextual()) {
-                    return textNode.asText();
+                JsonNode contentNode = messageNode.path("content");
+                if (contentNode.isTextual() && !contentNode.isNull()) {
+                    return contentNode.asText();
                 }
 
                 return "Tororoi Chat no pudo interpretar la respuesta del modelo en este momento.";
