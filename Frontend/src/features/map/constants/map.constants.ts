@@ -17,6 +17,8 @@ export const MAP_CONSTANTS = {
   maxSpeciesInPopup: 5,
   birdPointMinDistanceMeters: 45,
   birdPointPlacementAttemptsMultiplier: 24,
+  birdPointDriftIntervalMs: 15000,
+  birdPointDriftMaxMeters: 9,
   birdPointRadiusPixels: 4,
   birdPointColor: '#b5161b',
   birdPointFillOpacity: 0.46,

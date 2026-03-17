@@ -536,7 +536,8 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
   }, [connectionState, retryAttempt])
 
   const showNoSignalBadge = !canViewStream || connectionState !== 'live'
-  const noConnectionState = connectionState !== 'live'
+  const isLoadingState = connectionState === 'loading'
+  const noConnectionState = connectionState === 'empty' || connectionState === 'error'
 
   const connectionTooltip = useMemo(() => {
     const parts = [showNoSignalBadge ? labels.streamNoSignal : statusLabel]
@@ -594,6 +595,13 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
               <canvas ref={streamCanvasRef} className="camera-stream-canvas" />
               <canvas ref={overlayCanvasRef} className="camera-stream-overlay" />
 
+              {isLoadingState ? (
+                <div className="camera-stream-loading-overlay" aria-live="polite" aria-busy="true">
+                  <span className="camera-stream-loading-spinner" aria-hidden="true" />
+                  <p>{statusLabel}</p>
+                </div>
+              ) : null}
+
               {noConnectionState ? (
                 <div className="camera-stream-fallback">
                   <span className="camera-stream-fallback-icon" aria-hidden="true">
@@ -609,7 +617,7 @@ export const CameraDetailPage: FC<CameraDetailPageProps> = () => {
                 className="camera-stream-status-badge camera-stream-status-badge--empty"
                 title={connectionTooltip}
               >
-                {labels.streamNoSignal}
+                {isLoadingState ? statusLabel : labels.streamNoSignal}
               </span>
             ) : null}
           </div>

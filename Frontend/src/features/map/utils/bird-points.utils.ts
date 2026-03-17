@@ -50,15 +50,28 @@ function isFarEnough(candidate: CartesianPoint, existingPoints: CartesianPoint[]
   return true
 }
 
+function getDetectionBucket(lastDetectionAt: string | null): number {
+  if (!lastDetectionAt) {
+    return 0
+  }
+
+  const timestamp = Date.parse(lastDetectionAt)
+  if (!Number.isFinite(timestamp)) {
+    return 0
+  }
+
+  return Math.floor(timestamp / MAP_CONSTANTS.birdPointDriftIntervalMs)
+}
+
 export function buildBirdPoints(zone: BirdZone): BirdPoint[] {
-  const pointsToGenerate = zone.totalDetections
+  const pointsToGenerate = Math.min(zone.totalDetections, MAP_CONSTANTS.maxDetections)
 
   if (pointsToGenerate <= 0) {
     return []
   }
 
-  const seed = hashText(`${zone.id}-${zone.totalDetections}`)
-  const random = createSeededRandom(seed)
+  const random = createSeededRandom(hashText(zone.id))
+  const driftBucket = getDetectionBucket(zone.lastDetectionAt)
   const generatedInMeters: CartesianPoint[] = []
 
   let attempts = 0
@@ -88,8 +101,16 @@ export function buildBirdPoints(zone: BirdZone): BirdPoint[] {
   const latMeters = 111320
   const lngMeters = latMeters * Math.cos((zone.center.lat * Math.PI) / 180)
 
-  return generatedInMeters.map((point) => ({
-    lat: zone.center.lat + point.y / latMeters,
-    lng: zone.center.lng + point.x / lngMeters,
-  }))
+  return generatedInMeters.map((point, index) => {
+    const driftRandom = createSeededRandom(hashText(`${zone.id}-${index}-${driftBucket}`))
+    const driftAngle = driftRandom() * 2 * Math.PI
+    const driftRadius = driftRandom() * MAP_CONSTANTS.birdPointDriftMaxMeters
+    const driftedX = point.x + Math.cos(driftAngle) * driftRadius
+    const driftedY = point.y + Math.sin(driftAngle) * driftRadius
+
+    return {
+      lat: zone.center.lat + driftedY / latMeters,
+      lng: zone.center.lng + driftedX / lngMeters,
+    }
+  })
 }

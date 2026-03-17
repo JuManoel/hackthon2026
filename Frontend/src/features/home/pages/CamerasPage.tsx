@@ -22,6 +22,7 @@ import type { CameraDto, CameraUpsertPayload } from '@/features/home/types/camer
 import { CameraList } from '@/features/home/components/CameraList'
 import { CameraFormField } from '@/features/home/components/CameraFormField'
 import { useCameraStreamingAvailability } from '@/features/realtime/hooks/useCameraStreamingAvailability'
+import { REALTIME_CONSTANTS } from '@/features/realtime/adapters/realtime.constants'
 
 interface CamerasPageProps {
   readonly __noProps?: never
@@ -35,8 +36,6 @@ interface CameraFormState {
   readonly angleXZ: string
   readonly region: string
   readonly address: string
-  readonly latitude: string
-  readonly longitude: string
   readonly height: string
 }
 
@@ -49,8 +48,6 @@ const EMPTY_CAMERA_FORM: CameraFormState = {
   angleXZ: '',
   region: '',
   address: '',
-  latitude: '',
-  longitude: '',
   height: '',
 }
 
@@ -108,8 +105,6 @@ function validateCameraForm(state: CameraFormState): CameraFormErrors {
     angleXZ: validateNumberInRange(state.angleXZ, 0, 360, labels.camerasFormAngleRange),
     region: validateRequiredText(state.region),
     address: validateRequiredText(state.address),
-    latitude: validateNumberInRange(state.latitude, -90, 90, labels.camerasFormLatitudeRange),
-    longitude: validateNumberInRange(state.longitude, -180, 180, labels.camerasFormLongitudeRange),
     height: validateRequiredNumber(state.height),
   }
 
@@ -125,8 +120,6 @@ function toCameraFormState(camera: CameraDto): CameraFormState {
     angleXZ: String(camera.angleXZ),
     region: camera.location.region,
     address: camera.location.address,
-    latitude: String(camera.location.latitude),
-    longitude: String(camera.location.longitude),
     height: String(camera.location.height),
   }
 }
@@ -134,9 +127,9 @@ function toCameraFormState(camera: CameraDto): CameraFormState {
 function toCameraPayload(state: CameraFormState): CameraUpsertPayload | null {
   const angleXY = Number(state.angleXY)
   const angleXZ = Number(state.angleXZ)
-  const latitude = Number(state.latitude)
-  const longitude = Number(state.longitude)
   const height = Number(state.height)
+  const latitude = REALTIME_CONSTANTS.caldasCenter.lat
+  const longitude = REALTIME_CONSTANTS.caldasCenter.lng
 
   if (
     !state.name.trim() ||
@@ -144,8 +137,6 @@ function toCameraPayload(state: CameraFormState): CameraUpsertPayload | null {
     !state.address.trim() ||
     !Number.isFinite(angleXY) ||
     !Number.isFinite(angleXZ) ||
-    !Number.isFinite(latitude) ||
-    !Number.isFinite(longitude) ||
     !Number.isFinite(height)
   ) {
     return null
@@ -609,38 +600,6 @@ export const CamerasPage: FC<CamerasPageProps> = () => {
                   maxLength={180}
                   onChange={(event) => {
                     handleFormChange('address', event.target.value)
-                  }}
-                />
-                <CameraFormField
-                  id="camera-latitude"
-                  name="latitude"
-                  label={labels.camerasFormLatitudeLabel}
-                  errorMessage={formErrors.latitude}
-                  type="number"
-                  step="any"
-                  required
-                  min={-90}
-                  max={90}
-                  inputMode="decimal"
-                  value={formState.latitude}
-                  onChange={(event) => {
-                    handleFormChange('latitude', event.target.value)
-                  }}
-                />
-                <CameraFormField
-                  id="camera-longitude"
-                  name="longitude"
-                  label={labels.camerasFormLongitudeLabel}
-                  errorMessage={formErrors.longitude}
-                  type="number"
-                  step="any"
-                  required
-                  min={-180}
-                  max={180}
-                  inputMode="decimal"
-                  value={formState.longitude}
-                  onChange={(event) => {
-                    handleFormChange('longitude', event.target.value)
                   }}
                 />
                 <CameraFormField

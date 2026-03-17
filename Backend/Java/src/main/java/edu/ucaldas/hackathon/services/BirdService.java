@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -44,6 +45,9 @@ public class BirdService {
 	@Autowired
 	private SimpMessagingTemplate messagingTemplate;
 
+	@Value("${bird.realtime.persist:false}")
+	private boolean persistRealtimeDetections;
+
 	public GetBirdDTO getBirdById(String id) {
 		var bird = birdRepository.findById(UUID.fromString(id)).orElseThrow(() -> new DataNotFound("Bird not found"));
 		return toGetBirdDTO(bird);
@@ -65,7 +69,7 @@ public class BirdService {
 			LocalDateTime endDate) {
 		validateDateRange(startDate, endDate);
 		return birdRepository
-				.findByCamera_IdAndPhoto_TakenAtBetween(UUID.fromString(cameraId), startDate, endDate)
+				.findByCamera_IdAndDetectedAtBetween(UUID.fromString(cameraId), startDate, endDate)
 				.stream()
 				.map(this::toGetBirdDTO)
 				.toList();
@@ -73,7 +77,7 @@ public class BirdService {
 
 	public List<GetBirdDTO> getBirdsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
 		validateDateRange(startDate, endDate);
-		return birdRepository.findByPhoto_TakenAtBetween(startDate, endDate).stream().map(this::toGetBirdDTO).toList();
+		return birdRepository.findByDetectedAtBetween(startDate, endDate).stream().map(this::toGetBirdDTO).toList();
 	}
 
 	public GetBirdDTO createPhotoAndBird(CreatePhotoBirdDTO createPhotoBirdDTO) {
@@ -81,15 +85,29 @@ public class BirdService {
 		var camera = cameraRepository.findById(UUID.fromString(createPhotoBirdDTO.cameraId()))
 				.orElseThrow(() -> new DataNotFound("Camera not found"));
 
-		var photo = new Photo();
-		photo.setBase64(createPhotoBirdDTO.base64());
-		photo.setTakenAt(createPhotoBirdDTO.takenAt());
-		photoRepository.save(photo);
+		if (!persistRealtimeDetections) {
+			var birdDTO = new GetBirdDTO(
+					UUID.randomUUID(),
+					createPhotoBirdDTO.probabilityYolo(),
+					new GetSpeciesDTO(
+							species.getId(),
+							species.getPopularName(),
+							species.getScientificName(),
+							species.getYoloLabel()),
+					new GetPhotoDTO(
+							null,
+							null,
+							createPhotoBirdDTO.takenAt()),
+					camera.toGetCameraDTO());
+			messagingTemplate.convertAndSend("/topic/alerts", birdDTO);
+			return birdDTO;
+		}
 
 		var bird = new Bird();
 		bird.setProbabilityYolo(createPhotoBirdDTO.probabilityYolo());
 		bird.setSpecies(species);
-		bird.setPhoto(photo);
+		bird.setPhoto(null);
+		bird.setDetectedAt(createPhotoBirdDTO.takenAt());
 		bird.setCamera(camera);
 
 		birdRepository.save(bird);
@@ -134,6 +152,7 @@ public class BirdService {
 		bird.setProbabilityYolo(createBirdDTO.probabilityYolo());
 		bird.setSpecies(species);
 		bird.setPhoto(photo);
+		bird.setDetectedAt(photo.getTakenAt());
 		bird.setCamera(camera);
 
 		birdRepository.save(bird);
@@ -159,6 +178,7 @@ public class BirdService {
 		bird.setProbabilityYolo(updateBirdDTO.probabilityYolo());
 		bird.setSpecies(species);
 		bird.setPhoto(photo);
+		bird.setDetectedAt(photo.getTakenAt());
 		bird.setCamera(camera);
 
 		birdRepository.save(bird);
@@ -190,9 +210,9 @@ public class BirdService {
 						bird.getSpecies().getScientificName(),
 						bird.getSpecies().getYoloLabel()),
 				new GetPhotoDTO(
-						bird.getPhoto().getId(),
-						bird.getPhoto().getBase64(),
-						bird.getPhoto().getTakenAt()),
+						bird.getPhoto() != null ? bird.getPhoto().getId() : null,
+						bird.getPhoto() != null ? bird.getPhoto().getBase64() : null,
+						bird.getPhoto() != null ? bird.getPhoto().getTakenAt() : bird.getDetectedAt()),
 				bird.getCamera().toGetCameraDTO());
 	}
 }

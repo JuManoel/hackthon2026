@@ -18,10 +18,10 @@ public interface IBirdRepository extends JpaRepository<Bird, UUID>{
 
 	List<Bird> findBySpecies_Id(UUID speciesId);
 
-	List<Bird> findByCamera_IdAndPhoto_TakenAtBetween(UUID cameraId, LocalDateTime startDate, LocalDateTime endDate);
+	List<Bird> findByCamera_IdAndDetectedAtBetween(UUID cameraId, LocalDateTime startDate, LocalDateTime endDate);
 
-	List<Bird> findByPhoto_TakenAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+	List<Bird> findByDetectedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
 
-	@Query("SELECT DISTINCT b.camera.id FROM Bird b WHERE b.photo.takenAt >= :since")
+	@Query("SELECT DISTINCT b.camera.id FROM Bird b WHERE b.detectedAt >= :since")
 	List<UUID> findDistinctCameraIdsDetectedSince(@Param("since") LocalDateTime since);
 }

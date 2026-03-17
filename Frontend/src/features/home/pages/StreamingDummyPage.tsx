@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { labels } from '@/constants/labels'
 import { getStoredToken } from '@/features/auth/services/auth.service'
-import { listCamerasRequest } from '@/features/home/services/cameras.service'
+import { listCamerasRequest, updateCameraRequest } from '@/features/home/services/cameras.service'
 import type { CameraDto } from '@/features/home/types/camera.types'
 import { StreamingSocketAdapter } from '@/features/realtime/adapters/StreamingSocketAdapter'
 import { REALTIME_CONSTANTS } from '@/features/realtime/adapters/realtime.constants'
@@ -142,8 +142,6 @@ export const StreamingDummyPage: FC<StreamingDummyPageProps> = () => {
 
   const [cameraId, setCameraId] = useState(generateCameraId())
   const [availableCameras, setAvailableCameras] = useState<readonly CameraDto[]>([])
-  const [lat, setLat] = useState('')
-  const [lng, setLng] = useState('')
   const [height, setHeight] = useState('')
   const [streamState, setStreamState] = useState<StreamUiState>('idle')
   const [fps, setFps] = useState(0)
@@ -363,27 +361,15 @@ export const StreamingDummyPage: FC<StreamingDummyPageProps> = () => {
 
     setError(null)
 
-    if (!lat.trim() || !lng.trim()) {
-      setError(labels.streamDummyInvalidCoordinates)
-      return
-    }
-
-    const parsedLat = Number(lat)
-    const parsedLng = Number(lng)
-    const { minLat, maxLat, minLng, maxLng } = REALTIME_CONSTANTS.caldasBounds
-
-    if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
-      setError(labels.streamDummyInvalidCoordinates)
-      return
-    }
-
-    if (parsedLat < minLat || parsedLat > maxLat || parsedLng < minLng || parsedLng > maxLng) {
-      setError(labels.streamDummyInvalidCoordinatesRange)
-      return
-    }
-
-    if (!cameraId.trim()) {
+    const selectedCamera = availableCameras.find((camera) => camera.id === cameraId)
+    if (!selectedCamera) {
       setError(labels.cameraDetailUnknownCamera)
+      return
+    }
+
+    const token = getStoredToken()
+    if (!token) {
+      setError(labels.authSessionExpired)
       return
     }
 
@@ -395,6 +381,39 @@ export const StreamingDummyPage: FC<StreamingDummyPageProps> = () => {
     setFps(0)
 
     try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not available'))
+          return
+        }
+
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 0,
+        })
+      })
+
+      const latitude = position.coords.latitude
+      const longitude = position.coords.longitude
+      const nextHeight = Number(height)
+      const resolvedHeight = Number.isFinite(nextHeight)
+        ? nextHeight
+        : Number(selectedCamera.location.height)
+
+      await updateCameraRequest(token, selectedCamera.id, {
+        name: selectedCamera.name,
+        angleXY: selectedCamera.angleXY,
+        angleXZ: selectedCamera.angleXZ,
+        location: {
+          region: selectedCamera.location.region,
+          address: selectedCamera.location.address,
+          latitude,
+          longitude,
+          height: Number.isFinite(resolvedHeight) ? resolvedHeight : 0,
+        },
+      })
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: Math.round(window.screen.width * Math.max(1, window.devicePixelRatio || 1)) },
@@ -509,7 +528,7 @@ export const StreamingDummyPage: FC<StreamingDummyPageProps> = () => {
       setStreamState('error')
       setError(labels.streamConnectionError)
     }
-  }, [cameraId, clearInflightTimeout, drawOverlay, lat, lng, stopPublishing, syncCaptureResolution, syncOverlaySize])
+  }, [availableCameras, cameraId, clearInflightTimeout, drawOverlay, height, stopPublishing, syncCaptureResolution, syncOverlaySize])
 
   useEffect(() => {
     document.title = labels.streamDummyPageTitle
@@ -640,60 +659,6 @@ export const StreamingDummyPage: FC<StreamingDummyPageProps> = () => {
             {labels.streamDummyGenerateCameraId}
           </Button>
         </div>
-
-        <label
-          htmlFor="dummy-lat"
-          title={labels.streamDummyCoordinatesTooltip(
-            REALTIME_CONSTANTS.caldasBounds.minLat,
-            REALTIME_CONSTANTS.caldasBounds.maxLat,
-            REALTIME_CONSTANTS.caldasBounds.minLng,
-            REALTIME_CONSTANTS.caldasBounds.maxLng,
-          )}
-        >
-          {labels.streamDummyLatitude}
-        </label>
-        <input
-          id="dummy-lat"
-          name="latitude"
-          type="number"
-          required
-          inputMode="decimal"
-          min={REALTIME_CONSTANTS.caldasBounds.minLat}
-          max={REALTIME_CONSTANTS.caldasBounds.maxLat}
-          step="0.000001"
-          placeholder="5.298300"
-          value={lat}
-          onChange={(event) => {
-            setLat(event.target.value)
-          }}
-        />
-
-        <label
-          htmlFor="dummy-lng"
-          title={labels.streamDummyCoordinatesTooltip(
-            REALTIME_CONSTANTS.caldasBounds.minLat,
-            REALTIME_CONSTANTS.caldasBounds.maxLat,
-            REALTIME_CONSTANTS.caldasBounds.minLng,
-            REALTIME_CONSTANTS.caldasBounds.maxLng,
-          )}
-        >
-          {labels.streamDummyLongitude}
-        </label>
-        <input
-          id="dummy-lng"
-          name="longitude"
-          type="number"
-          required
-          inputMode="decimal"
-          min={REALTIME_CONSTANTS.caldasBounds.minLng}
-          max={REALTIME_CONSTANTS.caldasBounds.maxLng}
-          step="0.000001"
-          placeholder="-75.247900"
-          value={lng}
-          onChange={(event) => {
-            setLng(event.target.value)
-          }}
-        />
 
         <label htmlFor="dummy-height">{labels.streamDummyHeight}</label>
         <input

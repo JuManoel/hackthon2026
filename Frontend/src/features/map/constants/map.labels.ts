@@ -19,6 +19,8 @@ export const MAP_LABELS = {
   mapDelayIndicator: (seconds: number): string => `Latencia alta: ${seconds}s`,
   mapLoadingAria: 'Cargando mapa de actividad',
   mapCenterControlAria: 'Control para centrar en Caldas',
+  mapBirdsControlAria: 'Control para centrar en aves detectadas',
+  centerOnBirds: 'Ir a aves',
   speciesDetectedCountSuffix: 'especies detectadas',
   locationSeparator: ' - ',
   relativeLessThanMinute: 'hace menos de 1 min',

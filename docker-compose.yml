@@ -30,6 +30,7 @@ services:
       SPRING_DATASOURCE_USERNAME: avnadmin
       SPRING_DATASOURCE_PASSWORD: AVNS_5WzZrrHYJjkid7dmS1s
       JWT_SECRET: ${JWT_SECRET:-9d3edce9-bd07-400d-96e8-d58de3ddf976}
+      BIRD_REALTIME_PERSIST: ${BIRD_REALTIME_PERSIST:-false}
     ports:
       - "${JAVA_PORT_EXTERNAL:-8080}:8080"
     restart: unless-stopped
@@ -44,6 +45,7 @@ services:
       SUPABASE_TABLE: ${SUPABASE_TABLE:-avistamientos}
       JAVA_SERVICE_URL: ${JAVA_SERVICE_URL:-http://backend-java:8080}
       ENABLE_DETECTION_PHOTO_UPLOAD: ${ENABLE_DETECTION_PHOTO_UPLOAD:-false}
+      ENABLE_JAVA_BIRD_FORWARDING: ${ENABLE_JAVA_BIRD_FORWARDING:-true}
       PYTHONUNBUFFERED: "1"
     ports:
       - "${PYTHON_PORT_EXTERNAL:-8000}:8000"

@@ -18,6 +18,8 @@ export type Detection = {
   cameraId: string
   timestamp: number
   birds: DetectionBird[]
+  cameraLat?: number
+  cameraLng?: number
   fps?: number
   frameWidth?: number
   frameHeight?: number

@@ -33,6 +33,19 @@ function toNumber(value: number | string | undefined): number {
   return 0
 }
 
+function toOptionalNumber(value: number | string | undefined): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  return undefined
+}
+
 function toTimestamp(value: string | undefined): number {
   if (!value) {
     return Date.now()
@@ -63,10 +76,14 @@ export class DetectionSocketAdapter extends StompSocketAdapter<Detection> {
     const scientificName = raw.species?.scientificName ?? species
     const confidenceRaw = toNumber(raw.probabilityYolo)
     const confidence = confidenceRaw > 1 ? confidenceRaw / 100 : confidenceRaw
+    const cameraLat = toOptionalNumber(raw.camera?.location?.latitude)
+    const cameraLng = toOptionalNumber(raw.camera?.location?.longitude)
 
     return {
       cameraId,
       timestamp: toTimestamp(raw.photo?.takenAt),
+      cameraLat,
+      cameraLng,
       birds: [
         {
           species,

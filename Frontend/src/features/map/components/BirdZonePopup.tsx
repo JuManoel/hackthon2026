@@ -17,7 +17,7 @@ export const BirdZonePopup: FC<BirdZonePopupProps> = ({ zone }) => {
   const navigate = useNavigate()
 
   const handleViewCamera = (): void => {
-    if (!zone.hasStreaming) {
+    if (!zone.cameraId) {
       return
     }
 
@@ -54,7 +54,7 @@ export const BirdZonePopup: FC<BirdZonePopupProps> = ({ zone }) => {
       detailsTitle={MAP_LABELS.detectedSpecies}
       detailItems={detailItems}
       action={
-        <Button variant="primary" disabled={!zone.hasStreaming} onClick={handleViewCamera}>
+        <Button variant="primary" onClick={handleViewCamera}>
           {MAP_LABELS.viewCamera}
         </Button>
       }

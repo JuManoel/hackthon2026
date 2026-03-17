@@ -28,6 +28,26 @@ ENABLE_DETECTION_PHOTO_UPLOAD = os.getenv("ENABLE_DETECTION_PHOTO_UPLOAD", "fals
     "yes",
     "on",
 }
+ENABLE_JAVA_BIRD_FORWARDING = os.getenv("ENABLE_JAVA_BIRD_FORWARDING", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+JAVA_SERVICE_URL = os.getenv("JAVA_SERVICE_URL", "http://localhost:8080").rstrip("/")
+JAVA_PHOTO_BIRD_ENDPOINT = f"{JAVA_SERVICE_URL}/bird/photo_bird"
+JAVA_FORWARD_REQUEST_TIMEOUT_SECONDS = max(
+    0.5,
+    float(os.getenv("JAVA_FORWARD_REQUEST_TIMEOUT_SECONDS", "4.0")),
+)
+JAVA_FORWARD_SAME_SIGNATURE_COOLDOWN_SECONDS = max(
+    0.0,
+    float(os.getenv("JAVA_FORWARD_SAME_SIGNATURE_COOLDOWN_SECONDS", "45.0")),
+)
+JAVA_FORWARD_MAX_BIRDS_PER_EVENT = max(
+    0,
+    int(os.getenv("JAVA_FORWARD_MAX_BIRDS_PER_EVENT", "0")),
+)
 DIAGNOSTIC_FRAME_BASE64 = (
     "data:image/jpeg;base64,"
     "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQ"
@@ -42,10 +62,170 @@ DIAGNOSTIC_FRAME_BASE64 = (
 )
 
 camera_viewers: dict[str, set[WebSocket]] = {}
+camera_detection_state: dict[str, dict[str, float | str]] = {}
+camera_forward_tasks: dict[str, asyncio.Task[None]] = {}
+camera_forward_pending_payloads: dict[str, list[dict]] = {}
 
 
 def current_timestamp_ms() -> int:
     return int(datetime.datetime.now().timestamp() * 1000)
+
+
+def normalize_species_label(value: object) -> str:
+    normalized = str(value or "").strip().lower()
+    return normalized or "bird"
+
+
+def build_detection_signature(detalles: list[dict]) -> str:
+    species_counter: dict[str, int] = {}
+    for deteccion in detalles:
+        label = normalize_species_label(deteccion.get("especie"))
+        species_counter[label] = species_counter.get(label, 0) + 1
+
+    parts = [f"count:{len(detalles)}"]
+    parts.extend(f"{label}:{count}" for label, count in sorted(species_counter.items()))
+    return "|".join(parts)
+
+
+def should_forward_detection_to_java(camera_id: str, detalles: list[dict]) -> tuple[bool, str, str]:
+    if not detalles:
+        camera_detection_state.pop(camera_id, None)
+        return False, "no_detections", ""
+
+    signature = build_detection_signature(detalles)
+    now = time.monotonic()
+    state = camera_detection_state.get(camera_id)
+
+    if state is None:
+        camera_detection_state[camera_id] = {
+            "signature": signature,
+            "last_sent_at": now,
+        }
+        return True, "first_detection", signature
+
+    last_signature = str(state.get("signature", ""))
+    last_sent_at = float(state.get("last_sent_at", 0.0))
+    elapsed_since_last_send = now - last_sent_at
+
+    if (
+        signature == last_signature
+        and elapsed_since_last_send < JAVA_FORWARD_SAME_SIGNATURE_COOLDOWN_SECONDS
+    ):
+        return False, "duplicate_signature_within_cooldown", signature
+
+    state["signature"] = signature
+    state["last_sent_at"] = now
+
+    if signature != last_signature:
+        return True, "signature_changed", signature
+
+    return True, "cooldown_elapsed", signature
+
+
+def build_java_photo_bird_payloads(camera_id: str, detalles: list[dict]) -> list[dict]:
+    if not detalles:
+        return []
+
+    selected_detalles = detalles
+    if JAVA_FORWARD_MAX_BIRDS_PER_EVENT > 0:
+        selected_detalles = detalles[:JAVA_FORWARD_MAX_BIRDS_PER_EVENT]
+
+    taken_at = datetime.datetime.now().isoformat()
+    payloads: list[dict] = []
+
+    for deteccion in selected_detalles:
+        detected_photo_base64 = deteccion.get("foto_base64", "")
+        has_detected_photo = (
+            isinstance(detected_photo_base64, str)
+            and len(detected_photo_base64.strip()) > 0
+        )
+        base64_value = (
+            detected_photo_base64
+            if ENABLE_DETECTION_PHOTO_UPLOAD and has_detected_photo
+            else DIAGNOSTIC_FRAME_BASE64
+        )
+
+        payloads.append(
+            {
+                "probabilityYolo": deteccion.get(
+                    "confianza",
+                    deteccion.get("confianza_detector", 0),
+                ),
+                "yoloLabel": deteccion.get("especie", "bird"),
+                "cameraId": camera_id,
+                # Si el upload de foto completa está desactivado (o no hay recorte),
+                # enviamos un frame mínimo para conservar la señal sin sobrecargar.
+                "base64": base64_value,
+                "takenAt": taken_at,
+            }
+        )
+
+    return payloads
+
+
+async def forward_payload_batch_to_java(camera_id: str, payloads: list[dict]) -> None:
+    if not payloads:
+        return
+
+    success_count = 0
+
+    for payload in payloads:
+        try:
+            response = await asyncio.to_thread(
+                requests.post,
+                JAVA_PHOTO_BIRD_ENDPOINT,
+                json=payload,
+                timeout=JAVA_FORWARD_REQUEST_TIMEOUT_SECONDS,
+            )
+            if 200 <= response.status_code < 300:
+                success_count += 1
+            else:
+                logger.warning(
+                    "WS forwarding non-success status | camera_id=%s | status=%s",
+                    camera_id,
+                    response.status_code,
+                )
+        except Exception as request_error:
+            logger.error(
+                "WS forwarding error | camera_id=%s | error=%s",
+                camera_id,
+                str(request_error),
+            )
+
+    logger.info(
+        "WS forwarding batch finished | camera_id=%s | queued=%s | success=%s",
+        camera_id,
+        len(payloads),
+        success_count,
+    )
+
+
+def queue_forward_batch_to_java(camera_id: str, payloads: list[dict]) -> None:
+    if not payloads:
+        return
+
+    running_task = camera_forward_tasks.get(camera_id)
+    if running_task is not None and not running_task.done():
+        camera_forward_pending_payloads[camera_id] = payloads
+        return
+
+    async def consume_batches(initial_payloads: list[dict]) -> None:
+        current_payloads = initial_payloads
+
+        try:
+            while True:
+                await forward_payload_batch_to_java(camera_id, current_payloads)
+                next_payloads = camera_forward_pending_payloads.pop(camera_id, None)
+                if next_payloads is None:
+                    break
+                current_payloads = next_payloads
+        finally:
+            camera_forward_tasks.pop(camera_id, None)
+            late_payloads = camera_forward_pending_payloads.pop(camera_id, None)
+            if late_payloads:
+                queue_forward_batch_to_java(camera_id, late_payloads)
+
+    camera_forward_tasks[camera_id] = asyncio.create_task(consume_batches(payloads))
 
 
 def socket_client_label(websocket: WebSocket) -> str:
@@ -385,38 +565,33 @@ async def handle_publisher_stream(websocket: WebSocket, camera_id: str, client: 
                         client,
                     )
 
-                    if ENABLE_DETECTION_PHOTO_UPLOAD:
-                        java_service_url = os.getenv("JAVA_SERVICE_URL", "http://localhost:8080")
-                        url_post_photo_bird = f"{java_service_url}/bird/photo_bird"
-
-                        for deteccion in detalles:
-                            payload = {
-                                "probabilityYolo": deteccion.get("confianza", deteccion.get("confianza_detector", 0)),
-                                "yoloLabel": deteccion.get("especie", "bird"),
-                                "cameraId": camera_id,
-                                "base64": deteccion.get("foto_base64", ""),
-                                "takenAt": datetime.datetime.now().isoformat()
-                            }
-
-                            try:
-                                def send_data(p=payload):
-                                    return requests.post(url_post_photo_bird, json=p, timeout=5.0)
-
-                                response = await asyncio.to_thread(send_data)
-                                logger.info(
-                                    "WS detection forwarded to Java | camera_id=%s | status=%s",
-                                    camera_id,
-                                    response.status_code,
-                                )
-                            except Exception as request_error:
-                                logger.error(
-                                    "WS forwarding error | camera_id=%s | error=%s",
-                                    camera_id,
-                                    str(request_error),
-                                )
+                    if ENABLE_JAVA_BIRD_FORWARDING:
+                        should_forward, reason, signature = should_forward_detection_to_java(
+                            camera_id,
+                            detalles,
+                        )
+                        if should_forward:
+                            payloads = build_java_photo_bird_payloads(camera_id, detalles)
+                            queue_forward_batch_to_java(camera_id, payloads)
+                            logger.info(
+                                "WS detection batch queued | camera_id=%s | birds=%s | reason=%s | signature=%s | photo_upload=%s",
+                                camera_id,
+                                len(payloads),
+                                reason,
+                                signature,
+                                ENABLE_DETECTION_PHOTO_UPLOAD,
+                            )
+                        else:
+                            logger.debug(
+                                "WS detection batch skipped | camera_id=%s | reason=%s | signature=%s",
+                                camera_id,
+                                reason,
+                                signature,
+                            )
                     else:
+                        camera_detection_state.pop(camera_id, None)
                         logger.debug(
-                            "WS detection photo upload disabled | camera_id=%s",
+                            "WS detection forward disabled | camera_id=%s",
                             camera_id,
                         )
 
@@ -445,6 +620,7 @@ async def handle_publisher_stream(websocket: WebSocket, camera_id: str, client: 
                         }
                     )
                 else:
+                    camera_detection_state.pop(camera_id, None)
                     logger.debug(
                         "WS frame without detections | camera_id=%s | client=%s",
                         camera_id,
@@ -508,3 +684,5 @@ async def handle_publisher_stream(websocket: WebSocket, camera_id: str, client: 
             str(error),
         )
         await close_invalid_request(websocket, WS_CLOSE_STREAM_ERROR, "publisher_stream_error")
+    finally:
+        camera_detection_state.pop(camera_id, None)

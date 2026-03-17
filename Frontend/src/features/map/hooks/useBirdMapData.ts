@@ -11,6 +11,7 @@ import { REALTIME_CONSTANTS } from '@/features/realtime/adapters/realtime.consta
 import type { Camera, ConnectionState, Detection } from '@/features/realtime/types/realtime.types'
 import { labels } from '@/constants/labels'
 import { useCameraStreamingAvailability } from '@/features/realtime/hooks/useCameraStreamingAvailability'
+import { logInfo, logWarn } from '@/shared/lib/logging/structured-logger'
 
 type UseBirdMapDataReturn = {
   zones: BirdZone[]
@@ -18,9 +19,12 @@ type UseBirdMapDataReturn = {
   error: string | null
   isDelayed: boolean
   delayMs: number
+  socketState: 'connected' | 'retrying' | 'disconnected' | 'connecting'
+  detectedBirds: number
 }
 
 type DetectionByCamera = Map<string, Detection[]>
+const MAX_DETECTION_EVENTS_PER_CAMERA = 180
 
 function buildZones(
   cameras: Camera[],
@@ -110,6 +114,67 @@ function pruneDetections(detections: Detection[]): Detection[] {
   return detections.filter((detection) => detection.timestamp >= threshold)
 }
 
+function normalizeBirdLabel(labelLike: string): string {
+  const label = `${labelLike || 'ave'}`.trim().toLowerCase()
+  return label || 'ave'
+}
+
+function buildDetectionSignature(detection: Detection): string {
+  if (detection.birds.length === 0) {
+    return 'count:0'
+  }
+
+  const speciesCounter = new Map<string, number>()
+
+  detection.birds.forEach((bird) => {
+    const key = normalizeBirdLabel(bird.scientificName || bird.species || 'ave')
+    speciesCounter.set(key, (speciesCounter.get(key) ?? 0) + 1)
+  })
+
+  const parts = [`count:${detection.birds.length}`]
+  Array.from(speciesCounter.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .forEach(([label, count]) => {
+      parts.push(`${label}:${count}`)
+    })
+
+  return parts.join('|')
+}
+
+function mergeDetections(currentDetections: Detection[], detection: Detection): Detection[] {
+  const pruned = pruneDetections(currentDetections)
+  if (detection.birds.length === 0) {
+    return pruned
+  }
+
+  const merged = [...pruned]
+  const latestDetection = merged[merged.length - 1]
+
+  if (latestDetection && latestDetection.timestamp === detection.timestamp) {
+    merged[merged.length - 1] = {
+      ...latestDetection,
+      birds: [...latestDetection.birds, ...detection.birds],
+      timestamp: detection.timestamp,
+    }
+  } else {
+    merged.push(detection)
+  }
+
+  if (merged.length >= 2) {
+    const current = merged[merged.length - 1]
+    const previous = merged[merged.length - 2]
+    if (buildDetectionSignature(previous) === buildDetectionSignature(current)) {
+      merged.splice(merged.length - 2, 1)
+    }
+  }
+
+  if (merged.length <= MAX_DETECTION_EVENTS_PER_CAMERA) {
+    return merged
+  }
+
+  return merged.slice(merged.length - MAX_DETECTION_EVENTS_PER_CAMERA)
+}
+
 export function useBirdMapData(): UseBirdMapDataReturn {
   const activeStreamingIds = useCameraStreamingAvailability()
   const [state, setState] = useState<ConnectionState>('loading')
@@ -117,6 +182,12 @@ export function useBirdMapData(): UseBirdMapDataReturn {
   const [delayMs, setDelayMs] = useState(0)
   const [cameras, setCameras] = useState<Map<string, Camera>>(new Map())
   const [detectionsByCamera, setDetectionsByCamera] = useState<DetectionByCamera>(new Map())
+  const [cameraSocketState, setCameraSocketState] = useState<'connected' | 'retrying' | 'disconnected' | 'connecting'>(
+    'connecting',
+  )
+  const [detectionSocketState, setDetectionSocketState] = useState<
+    'connected' | 'retrying' | 'disconnected' | 'connecting'
+  >('connecting')
 
   useEffect(() => {
     let isMounted = true
@@ -172,6 +243,8 @@ export function useBirdMapData(): UseBirdMapDataReturn {
     detectionSocketAdapter.connect()
 
     const unsubscribeCameraLifecycle = cameraSocketAdapter.onLifecycle((event) => {
+      setCameraSocketState(event.state)
+
       if (event.state === 'connected') {
         setState((currentState) => (currentState === 'error' ? 'live' : currentState))
       }
@@ -183,6 +256,8 @@ export function useBirdMapData(): UseBirdMapDataReturn {
     })
 
     const unsubscribeDetectionLifecycle = detectionSocketAdapter.onLifecycle((event) => {
+      setDetectionSocketState(event.state)
+
       if (event.state === 'connected') {
         setState((currentState) => (currentState === 'loading' ? 'live' : currentState))
       }
@@ -194,11 +269,13 @@ export function useBirdMapData(): UseBirdMapDataReturn {
     })
 
     const unsubscribeCameraError = cameraSocketAdapter.onError(() => {
+      setCameraSocketState('disconnected')
       setError(labels.mapSocketConnectionError)
       setState('error')
     })
 
     const unsubscribeDetectionError = detectionSocketAdapter.onError(() => {
+      setDetectionSocketState('disconnected')
       setError(labels.mapSocketConnectionError)
       setState('error')
     })
@@ -228,10 +305,56 @@ export function useBirdMapData(): UseBirdMapDataReturn {
     })
 
     const unsubscribeDetection = detectionSocketAdapter.onMessage((detection) => {
+      const hasValidLat = typeof detection.cameraLat === 'number' && Number.isFinite(detection.cameraLat)
+      const hasValidLng = typeof detection.cameraLng === 'number' && Number.isFinite(detection.cameraLng)
+
+      if (hasValidLat && hasValidLng) {
+        logInfo('bird-map', 'detection_coordinates_received', {
+          cameraId: detection.cameraId,
+          birds: detection.birds.length,
+          lat: detection.cameraLat,
+          lng: detection.cameraLng,
+          timestamp: detection.timestamp,
+        })
+      } else {
+        logWarn('bird-map', 'detection_coordinates_missing', {
+          cameraId: detection.cameraId,
+          birds: detection.birds.length,
+          cameraLat: detection.cameraLat ?? null,
+          cameraLng: detection.cameraLng ?? null,
+          timestamp: detection.timestamp,
+        })
+      }
+
+      setCameras((currentMap) => {
+        const nextMap = new Map(currentMap)
+        const existing = nextMap.get(detection.cameraId)
+
+        if (existing) {
+          if (hasValidLat && hasValidLng && (!Number.isFinite(existing.lat) || !Number.isFinite(existing.lng))) {
+            nextMap.set(detection.cameraId, {
+              ...existing,
+              lat: detection.cameraLat as number,
+              lng: detection.cameraLng as number,
+            })
+          }
+          return nextMap
+        }
+
+        nextMap.set(detection.cameraId, {
+          id: detection.cameraId,
+          lat: hasValidLat ? (detection.cameraLat as number) : NaN,
+          lng: hasValidLng ? (detection.cameraLng as number) : NaN,
+          hasStreaming: false,
+        })
+
+        return nextMap
+      })
+
       setDetectionsByCamera((currentMap) => {
         const nextMap = new Map(currentMap)
         const currentDetections = nextMap.get(detection.cameraId) ?? []
-        nextMap.set(detection.cameraId, pruneDetections([...currentDetections, detection]))
+        nextMap.set(detection.cameraId, mergeDetections(currentDetections, detection))
         return nextMap
       })
 
@@ -266,11 +389,34 @@ export function useBirdMapData(): UseBirdMapDataReturn {
     return 'live'
   }, [state, zones.length])
 
+  const socketState = useMemo<'connected' | 'retrying' | 'disconnected' | 'connecting'>(() => {
+    if (cameraSocketState === 'connected' && detectionSocketState === 'connected') {
+      return 'connected'
+    }
+
+    if (cameraSocketState === 'retrying' || detectionSocketState === 'retrying') {
+      return 'retrying'
+    }
+
+    if (cameraSocketState === 'disconnected' || detectionSocketState === 'disconnected') {
+      return 'disconnected'
+    }
+
+    return 'connecting'
+  }, [cameraSocketState, detectionSocketState])
+
+  const detectedBirds = useMemo(
+    () => zones.reduce((total, zone) => total + zone.totalDetections, 0),
+    [zones],
+  )
+
   return {
     zones,
     state: resolvedState,
     error,
     isDelayed: delayMs > REALTIME_CONSTANTS.highLatencyThresholdMs,
     delayMs,
+    socketState,
+    detectedBirds,
   }
 }
