@@ -1,4 +1,4 @@
-import { MAP_LABELS } from '../constants/map.labels'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
 
 export function getLatestIsoDate(dateValues: string[]): string | null {
   if (dateValues.length === 0) {

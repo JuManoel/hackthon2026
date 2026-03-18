@@ -3,9 +3,9 @@ package edu.ucaldas.hackathon.models;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import edu.ucaldas.hackathon.DTOs.camara.CreateLocationDTO;
-import edu.ucaldas.hackathon.DTOs.camara.GetLocationDTO;
-import edu.ucaldas.hackathon.DTOs.camara.UpdateLocationDTO;
+import edu.ucaldas.hackathon.DTOs.camera.CreateLocationDTO;
+import edu.ucaldas.hackathon.DTOs.camera.GetLocationDTO;
+import edu.ucaldas.hackathon.DTOs.camera.UpdateLocationDTO;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -42,8 +42,8 @@ public class Location {
     @Column(precision = 5, scale = 2)
     private BigDecimal height;
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "camera_id", unique = true, nullable = false, columnDefinition = "UUID")
-    private Camara camara;
+    @JoinColumn(name = "camera_id", unique = true, nullable = false, columnDefinition = "UUID", foreignKey = @jakarta.persistence.ForeignKey(name = "fk_locations_camera_id"))
+    private Camera camera;
 
     public Location(CreateLocationDTO createLocationDTO) {
         this.region = createLocationDTO.region();
@@ -70,5 +70,4 @@ public class Location {
         this.height = updateLocationDTO.height();
     }
 
- 
 }

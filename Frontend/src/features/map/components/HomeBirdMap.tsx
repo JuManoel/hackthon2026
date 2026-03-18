@@ -1,27 +1,37 @@
 import type { FC } from 'react'
 
-import '../../../shared/lib/leaflet/leaflet-default-icon'
-import '../map.css'
-import { MAP_LABELS } from '../constants/map.labels'
-import { useBirdMapData } from '../hooks/useBirdMapData'
-import { BirdMapEmptyState } from './BirdMapEmptyState'
-import { BirdMapLoadingState } from './BirdMapLoadingState'
-import { BirdMapView } from './BirdMapView'
+import '@/shared/lib/leaflet/leaflet-default-icon'
+import '@/features/map/map.css'
+import { useBirdMapData } from '@/features/map/hooks/useBirdMapData'
+import { BirdMapLoadingState } from '@/features/map/components/BirdMapLoadingState'
+import { BirdMapView } from '@/features/map/components/BirdMapView'
 
 export const HomeBirdMap: FC = () => {
-  const { zones, isLoading, error } = useBirdMapData()
+  const { zones, state, isDelayed, delayMs, socketState, detectedBirds } = useBirdMapData()
 
-  if (isLoading) {
+  if (state === 'loading') {
     return <BirdMapLoadingState />
   }
 
-  if (error) {
-    return <BirdMapEmptyState message={MAP_LABELS.mapLoadError} />
+  if (state === 'error' && zones.length === 0) {
+    return (
+      <BirdMapView
+        zones={[]}
+        isDelayed={isDelayed}
+        delayMs={delayMs}
+        socketState={socketState}
+        detectedBirds={detectedBirds}
+      />
+    )
   }
 
-  if (zones.length === 0) {
-    return <BirdMapEmptyState message={MAP_LABELS.mapNoData} />
-  }
-
-  return <BirdMapView zones={zones} />
+  return (
+    <BirdMapView
+      zones={zones}
+      isDelayed={isDelayed}
+      delayMs={delayMs}
+      socketState={socketState}
+      detectedBirds={detectedBirds}
+    />
+  )
 }

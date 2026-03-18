@@ -14,17 +14,26 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # ============= CONFIGURACIÓN DEL SERVIDOR =============
 
 # Ruta de los modelos YOLO
-RUTA_MODELO_DETECTOR = os.path.join(BASE_DIR, "weights", "yolov8m.pt")
-RUTA_MODELO_CLASIFICADOR = os.path.join(BASE_DIR, "weights", "best(2).pt")
+RUTA_MODELO_DETECTOR = os.path.join(BASE_DIR, "weights", "yolo26n.pt")
+RUTA_MODELO_CLASIFICADOR = os.path.join(BASE_DIR, "weights", "best.pt")
 
 # Parámetros de detección
 CLASE_AVES = 14  # COCO dataset: 14 = bird
-CONFIANZA_DETECTOR = 0.2  # Rango: 0.0 - 1.0 (0% - 100%)
+CONFIANZA_DETECTOR = 0.05  # Rango: 0.0 - 1.0 (0% - 100%)
 CONFIANZA_CLASIFICADOR = 0.40
 MIN_ANCHO_CAJA = 20
 MIN_ALTO_CAJA = 20
 MIN_AREA_RELATIVA = 0.0001   # 0.01% del frame
-SOLO_MEJOR_AVE = False
+
+# Test-Time Augmentation para clasificación más precisa
+USE_TTA_CHAT = True  # True = más preciso pero más lento (recomendado para chat)
+USE_TTA_VIDEO = False  # False = más rápido (recomendado para video en tiempo real)
+
+# Configuración de cuántas aves devolver
+# True = solo devolver el ave con mayor confianza
+# False = devolver todas las aves detectadas que superen el umbral de confianza
+SOLO_MEJOR_AVE_CHAT = True   # Para chat: devuelve solo la mejor
+SOLO_MEJOR_AVE_VIDEO = False  # Para video: devuelve todas las detectadas
 
 # ============= CONFIGURACIÓN SUPABASE =============
 

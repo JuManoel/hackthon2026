@@ -2,8 +2,9 @@ import type { FC, ReactNode } from 'react'
 import { Camera, House, Settings } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 
-import { labels } from '../../../constants/labels'
-import '../home.css'
+import { BirdHammerChat } from '@/components/chat/BirdHammerChat'
+import { labels } from '@/constants/labels'
+import '@/features/home/home.css'
 
 type HomeTab = 'home' | 'settings' | 'cameras'
 
@@ -47,6 +48,9 @@ export const HomeShell: FC<HomeShellProps> = ({ activeTab, children, contentClas
   const contentClasses = ['home-shell-content', contentClassName].filter(Boolean).join(' ')
   const isMapContent = contentClassName === 'home-shell-content--map'
   const shellClasses = ['home-shell', isMapContent ? 'home-shell--map' : null].filter(Boolean).join(' ')
+  const footerClasses = ['home-shell-footer', activeTab === 'home' ? null : 'home-shell-footer--masked']
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <main className={shellClasses}>
@@ -56,7 +60,9 @@ export const HomeShell: FC<HomeShellProps> = ({ activeTab, children, contentClas
 
       <section className={contentClasses}>{children}</section>
 
-      <footer className="home-shell-footer">
+      <BirdHammerChat />
+
+      <footer className={footerClasses}>
         <nav className="home-shell-nav" aria-label={labels.homeNavAriaLabel}>
           {navTabs.map((tab) => {
             const isCurrent = tab.key === activeTab

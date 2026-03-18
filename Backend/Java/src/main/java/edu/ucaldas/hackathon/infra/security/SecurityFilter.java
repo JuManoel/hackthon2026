@@ -3,16 +3,16 @@ package edu.ucaldas.hackathon.infra.security;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import edu.ucaldas.hackathon.infra.exception.ErrorToken;
 import edu.ucaldas.hackathon.repositories.IUserRepository;
 import edu.ucaldas.hackathon.services.TokenService;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -72,22 +72,29 @@ public class SecurityFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         var authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            var token = authorizationHeader.replace("Bearer ", ""); // duvidas sobre os 2 espacos
-            var username = tokenService.getSubject(token);
-            if (username != null) {
+            var token = authorizationHeader.replace("Bearer ", "");
+            try {
+                var username = tokenService.getSubject(token);
                 UserDetails user = userRepository.findByUsername(username);
                 if (user != null) {
                     var authentication = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 } else {
-                    throw new EntityNotFoundException("User not found or inactive");
+                    sendErrorResponse(response, HttpStatus.NOT_FOUND, "User not found");
+                    return;
                 }
-            } else {
-                throw new ErrorToken("Invalid token");
+            } catch (RuntimeException e) {
+                sendErrorResponse(response, HttpStatus.UNAUTHORIZED, e.getMessage());
+                return;
             }
         }
         filterChain.doFilter(request, response);
+    }
 
+    private void sendErrorResponse(HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.getWriter().write("{\"message\":\"" + message + "\",\"status\":\"" + status.value() + "\"}");
     }
 
 }

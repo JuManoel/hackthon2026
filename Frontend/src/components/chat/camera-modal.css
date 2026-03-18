@@ -1,0 +1,128 @@
+.bird-camera-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.bird-camera-modal-content {
+  width: 100%;
+  max-width: 500px;
+  background: var(--color-neutral-0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+}
+
+.bird-camera-modal-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.bird-camera-modal-title {
+  margin: 0;
+  font-size: var(--text-label-lg-size);
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.bird-camera-modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-neutral-500);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.bird-camera-modal-close:hover {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-900);
+}
+
+.bird-camera-modal-body {
+  position: relative;
+  background: #000;
+  aspect-ratio: 4/3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bird-camera-viewfinder {
+  width: 100%;
+  height: 100%;
+}
+
+.bird-camera-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* Mirror effect for natural feel */
+}
+
+.bird-camera-error {
+  padding: 24px;
+  text-align: center;
+  color: #ff4d4f;
+  background: #fff1f0;
+  border-radius: 8px;
+  margin: 20px;
+}
+
+.bird-camera-modal-footer {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  background: var(--color-neutral-0);
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.bird-camera-capture-btn {
+  width: 64px !important;
+  height: 64px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--color-brand-500) !important;
+  box-shadow: 0 4px 12px rgba(10, 10, 10, 0.4) !important;
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.bird-camera-capture-btn:hover:not(:disabled) {
+  transform: scale(1.05) !important;
+}
+
+.bird-camera-capture-btn:active:not(:disabled) {
+  transform: scale(0.95) !important;
+}
+
+@media (max-width: 600px) {
+  .bird-camera-modal-content {
+    height: 100%;
+    max-width: none;
+    border-radius: 0;
+  }
+
+  .bird-camera-modal-body {
+    flex: 1;
+    aspect-ratio: auto;
+  }
+}

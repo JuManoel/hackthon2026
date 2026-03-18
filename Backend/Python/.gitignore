@@ -13,13 +13,15 @@ wheels/
 venv/
 env/
 
-# Entorno y variables
-.env
-
-# Modelos de Machine Learning (Pesos grandes - YOLO)
+# Modelos y machine learning
+.weights/
 weights/
 *.pt
-*.onnx
+*.h5
+
+
+# Entorno y variables
+.env
 
 # Archivos de la aplicación y logs
 registro_avistamientos.csv

@@ -1,6 +1,7 @@
 package edu.ucaldas.hackathon.models;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -35,12 +36,15 @@ public class Bird {
     @JoinColumn(name = "species_id", nullable = false)
     private Species species;
 
-    @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "photo_id", nullable = false)
+    @ManyToOne(optional = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "photo_id", nullable = true)
     private Photo photo;
 
+    @Column(name = "detected_at", nullable = false)
+    private LocalDateTime detectedAt;
+
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
-    @JoinColumn(name = "camera_id", nullable = false)
-    private Camara camara;
+    @JoinColumn(name = "camera_id", nullable = false, foreignKey = @jakarta.persistence.ForeignKey(name = "fk_birds_camera_id"))
+    private Camera camera;
 
 }

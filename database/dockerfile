@@ -9,4 +9,4 @@ ENV POSTGRES_USER=postgres
 EXPOSE 5432
 
 # This script runs automatically on first container startup.
-COPY database/init.sql /docker-entrypoint-initdb.d/001-init.sql
+COPY init.sql /docker-entrypoint-initdb.d/001-init.sql

@@ -68,7 +68,7 @@ public class User implements UserDetails {
                 return List.of(new SimpleGrantedAuthority("GUIDE"));
 
             default:
-                return null;
+                return List.of();
         }
     }
 }

@@ -3,14 +3,20 @@ import { Circle, MapContainer, TileLayer, useMap } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css'
 
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import type { BirdZone } from '../types/map.types'
-import { BirdMapCenterControl } from './BirdMapCenterControl'
-import { BirdMapLegend } from './BirdMapLegend'
-import { BirdZonesLayer } from './BirdZonesLayer'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import { MAP_LABELS } from '@/features/map/constants/map.labels'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { BirdMapCenterControl } from '@/features/map/components/BirdMapCenterControl'
+import { BirdMapBirdsControl } from '@/features/map/components/BirdMapBirdsControl'
+import { BirdMapLegend } from '@/features/map/components/BirdMapLegend'
+import { BirdZonesLayer } from '@/features/map/components/BirdZonesLayer'
 
 interface BirdMapViewProps {
   readonly zones: BirdZone[]
+  readonly isDelayed: boolean
+  readonly delayMs: number
+  readonly socketState: 'connected' | 'retrying' | 'disconnected' | 'connecting'
+  readonly detectedBirds: number
 }
 
 const MapSizeInvalidator: FC = () => {
@@ -61,11 +67,30 @@ const MapSizeInvalidator: FC = () => {
   return null
 }
 
-export const BirdMapView: FC<BirdMapViewProps> = ({ zones }) => {
+function socketLabel(socketState: 'connected' | 'retrying' | 'disconnected' | 'connecting'): string {
+  switch (socketState) {
+    case 'connected':
+      return 'Conectado'
+    case 'retrying':
+      return 'Reintentando'
+    case 'disconnected':
+      return 'Desconectado'
+    default:
+      return 'Conectando'
+  }
+}
+
+export const BirdMapView: FC<BirdMapViewProps> = ({ zones, isDelayed, delayMs, socketState, detectedBirds }) => {
   const [useFallbackTiles, setUseFallbackTiles] = useState(false)
 
   return (
     <div className="bird-map-view">
+      <div className={`bird-map-socket-badge bird-map-socket-badge--${socketState}`}>
+        {`Socket: ${socketLabel(socketState)} | Aves: ${detectedBirds}`}
+      </div>
+      {isDelayed ? (
+        <div className="bird-map-delay-indicator">{MAP_LABELS.mapDelayIndicator(Math.floor(delayMs / 1000))}</div>
+      ) : null}
       <MapContainer
         center={[MAP_CONSTANTS.caldasCenter.lat, MAP_CONSTANTS.caldasCenter.lng]}
         zoom={MAP_CONSTANTS.defaultZoom}
@@ -106,6 +131,7 @@ export const BirdMapView: FC<BirdMapViewProps> = ({ zones }) => {
           className="caldas-highlight"
         />
         <BirdMapCenterControl />
+        <BirdMapBirdsControl zones={zones} />
         <BirdZonesLayer zones={zones} />
       </MapContainer>
 

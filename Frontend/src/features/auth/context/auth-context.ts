@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 
-import type { AuthUser, LoginRequest, RegisterRequest } from '../types/auth'
+import type { AuthUser, LoginRequest, RegisterRequest } from '@/features/auth/types/auth'
 
 export interface AuthContextValue {
   readonly user: AuthUser | null

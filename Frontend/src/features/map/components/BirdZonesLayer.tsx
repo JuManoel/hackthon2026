@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 
-import type { BirdZone } from '../types/map.types'
-import { BirdZoneCircle } from './BirdZoneCircle'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { BirdZoneCircle } from '@/features/map/components/BirdZoneCircle'
 
 interface BirdZonesLayerProps {
   readonly zones: BirdZone[]

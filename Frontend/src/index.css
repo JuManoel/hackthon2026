@@ -1,3 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --font-family-base: 'Inter', sans-serif;
 
@@ -60,8 +66,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
 }
 
 html,
@@ -71,52 +91,4 @@ body,
   min-height: 100svh;
   width: 100%;
   font-family: var(--font-family-base);
-}
-
-.type-title-1 {
-  font-size: var(--text-title-1-size);
-  line-height: var(--text-title-1-line);
-  font-weight: var(--text-title-1-weight);
-}
-
-.type-title-2 {
-  font-size: var(--text-title-2-size);
-  line-height: var(--text-title-2-line);
-  font-weight: var(--text-title-2-weight);
-}
-
-.type-title-3 {
-  font-size: var(--text-title-3-size);
-  line-height: var(--text-title-3-line);
-  font-weight: var(--text-title-3-weight);
-}
-
-.type-subtitle {
-  font-size: var(--text-subtitle-size);
-  line-height: var(--text-subtitle-line);
-  font-weight: var(--text-subtitle-weight);
-}
-
-.type-body {
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-line);
-  font-weight: var(--text-body-weight);
-}
-
-.type-label-lg {
-  font-size: var(--text-label-lg-size);
-  line-height: var(--text-label-lg-line);
-  font-weight: var(--text-label-lg-weight);
-}
-
-.type-label-md {
-  font-size: var(--text-label-md-size);
-  line-height: var(--text-label-md-line);
-  font-weight: var(--text-label-md-weight);
-}
-
-.type-label-sm {
-  font-size: var(--text-label-sm-size);
-  line-height: var(--text-label-sm-line);
-  font-weight: var(--text-label-sm-weight);
 }

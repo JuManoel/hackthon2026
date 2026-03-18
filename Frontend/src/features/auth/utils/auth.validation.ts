@@ -1,4 +1,4 @@
-import { labels } from '../../../constants/labels'
+import { labels } from '@/constants/labels'
 
 export function validateUsername(value: string): string | null {
   const normalizedValue = value.trim()

@@ -1,11 +1,12 @@
-import type { BirdZoneSpeciesStat } from '../types/map.types'
-import { calculateFrequency } from './frequency.utils'
+import type { BirdZoneSpeciesStat } from '@/features/map/types/map.types'
+import { calculateFrequency } from '@/features/map/utils/frequency.utils'
 
 type SpeciesCountEntry = {
   speciesId: string
   commonName: string
   scientificName: string
   count: number
+  confidence: number
 }
 
 export function toBirdZoneSpeciesStats(entries: SpeciesCountEntry[], totalDetections: number): BirdZoneSpeciesStat[] {
@@ -16,6 +17,7 @@ export function toBirdZoneSpeciesStats(entries: SpeciesCountEntry[], totalDetect
       scientificName: entry.scientificName,
       count: entry.count,
       frequency: calculateFrequency(entry.count, totalDetections),
+      confidence: entry.confidence,
     }))
     .sort((left, right) => {
       if (right.count !== left.count) {

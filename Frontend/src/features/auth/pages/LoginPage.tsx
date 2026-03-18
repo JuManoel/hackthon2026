@@ -1,13 +1,13 @@
 import { useEffect, useState, type FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { labels } from '../../../constants/labels'
-import { AuthLayout } from '../components/AuthLayout'
-import { PasswordField } from '../components/PasswordField'
-import { TextField } from '../components/TextField'
-import { useAuth } from '../hooks/useAuth'
-import type { LoginFormValues } from '../types/auth'
-import { validatePassword, validateUsername } from '../utils/auth.validation'
+import { labels } from '@/constants/labels'
+import { AuthLayout } from '@/features/auth/components/AuthLayout'
+import { PasswordField } from '@/features/auth/components/PasswordField'
+import { TextField } from '@/features/auth/components/TextField'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import type { LoginFormValues } from '@/features/auth/types/auth'
+import { validatePassword, validateUsername } from '@/features/auth/utils/auth.validation'
 
 const initialValues: LoginFormValues = {
   username: '',
@@ -70,11 +70,15 @@ export const LoginPage: FC = () => {
     >
       <TextField
         id="login-username"
+        name="username"
         label={labels.usernameLabel}
         placeholder={labels.usernamePlaceholder}
         value={formValues.username}
         error={fieldErrors.username}
         disabled={isLoading}
+        required
+        minLength={3}
+        maxLength={64}
         autoComplete="username"
         onChange={(event) => {
           if (error) {
@@ -97,11 +101,15 @@ export const LoginPage: FC = () => {
 
       <PasswordField
         id="login-password"
+        name="password"
         label={labels.passwordLabel}
         placeholder={labels.passwordPlaceholder}
         value={formValues.password}
         error={fieldErrors.password}
         disabled={isLoading}
+        required
+        minLength={8}
+        maxLength={128}
         autoComplete="current-password"
         toggleLabel={labels.passwordToggle}
         onChange={(event) => {

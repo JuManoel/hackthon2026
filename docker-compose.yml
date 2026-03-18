@@ -1,0 +1,66 @@
+services:
+  # database:
+  #   build:
+  #     context: ./database
+  #     dockerfile: dockerfile
+  #   container_name: hackthon2026-database
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB:-hackathon}
+  #     POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Hackthon2026*}
+  #   ports:
+  #     - "${DB_PORT_EXTERNAL:-5432}:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 10s
+  #   restart: unless-stopped
+
+  backend-java:
+    build:
+      context: ./Backend/Java
+      dockerfile: dockerfile
+    container_name: hackthon2026-backend-java
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://sdtc-ucaldas-5858.f.aivencloud.com:15367/defaultdb?sslmode=require
+      SPRING_DATASOURCE_USERNAME: avnadmin
+      SPRING_DATASOURCE_PASSWORD: AVNS_5WzZrrHYJjkid7dmS1s
+      JWT_SECRET: ${JWT_SECRET:-9d3edce9-bd07-400d-96e8-d58de3ddf976}
+      BIRD_REALTIME_PERSIST: ${BIRD_REALTIME_PERSIST:-false}
+    ports:
+      - "${JAVA_PORT_EXTERNAL:-8080}:8080"
+    restart: unless-stopped
+
+  backend-python:
+    build:
+      context: ./Backend/Python
+      dockerfile: dockerfile
+    container_name: hackthon2026-backend-python
+    environment:
+      # DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-Hackthon2026*}@database:5432/${POSTGRES_DB:-hackathon}
+      SUPABASE_TABLE: ${SUPABASE_TABLE:-avistamientos}
+      JAVA_SERVICE_URL: ${JAVA_SERVICE_URL:-http://backend-java:8080}
+      ENABLE_DETECTION_PHOTO_UPLOAD: ${ENABLE_DETECTION_PHOTO_UPLOAD:-false}
+      ENABLE_JAVA_BIRD_FORWARDING: ${ENABLE_JAVA_BIRD_FORWARDING:-true}
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "${PYTHON_PORT_EXTERNAL:-8000}:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+        VITE_PYTHON_SERVICE_URL: ${VITE_PYTHON_SERVICE_URL:-http://localhost:8000}
+    container_name: hackthon2026-frontend
+    depends_on:
+      - backend-java
+    ports:
+      - "${FRONTEND_PORT_EXTERNAL:-5173}:80"
+    restart: unless-stopped

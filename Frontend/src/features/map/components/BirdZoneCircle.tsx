@@ -1,11 +1,11 @@
 import type { FC } from 'react'
 import { Circle, CircleMarker, Popup } from 'react-leaflet'
 
-import { MAP_CONSTANTS } from '../constants/map.constants'
-import type { BirdZone } from '../types/map.types'
-import { getZoneStyle } from '../utils/activity.utils'
-import { buildBirdPoints } from '../utils/bird-points.utils'
-import { BirdZonePopup } from './BirdZonePopup'
+import { MAP_CONSTANTS } from '@/features/map/constants/map.constants'
+import type { BirdZone } from '@/features/map/types/map.types'
+import { getZoneStyle } from '@/features/map/utils/activity.utils'
+import { buildBirdPoints } from '@/features/map/utils/bird-points.utils'
+import { BirdZonePopup } from '@/features/map/components/BirdZonePopup'
 
 interface BirdZoneCircleProps {
   readonly zone: BirdZone

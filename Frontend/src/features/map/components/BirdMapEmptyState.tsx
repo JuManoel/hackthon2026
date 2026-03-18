@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 
-import { Card } from '../../../shared/ui/card/Card'
+import { Card } from '@/shared/ui/card/Card'
 
 interface BirdMapEmptyStateProps {
   readonly message: string

@@ -17,9 +17,17 @@ import edu.ucaldas.hackathon.services.TokenService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Autenticación", description = "Endpoints para autenticación y gestión de tokens JWT")
 public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -28,6 +36,21 @@ public class AuthController {
     private TokenService tokenService;
 
     @PostMapping("/login")
+    @Operation(
+        summary = "Autenticar usuario",
+        description = "Realiza la autenticación del usuario y genera un token JWT válido por 24 horas"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Autenticación exitosa",
+            content = @Content(schema = @Schema(implementation = TokenDTO.class))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Credenciales inválidas"
+        )
+    })
     public ResponseEntity<TokenDTO> login(@RequestBody LoginDTO loginDTO) {
         Authentication authentication = new UsernamePasswordAuthenticationToken(loginDTO.username(),
                 loginDTO.password());
@@ -39,6 +62,22 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @SecurityRequirement(name = "bearer-jwt")
+    @Operation(
+        summary = "Obtener información del usuario autenticado",
+        description = "Retorna la información del usuario actualmente autenticado"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Información del usuario",
+            content = @Content(schema = @Schema(implementation = MeDTO.class))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "No autenticado - Token inválido o ausente"
+        )
+    })
     public ResponseEntity<MeDTO> getMe() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
