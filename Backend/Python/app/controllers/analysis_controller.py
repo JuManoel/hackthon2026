@@ -1,5 +1,5 @@
 import logging
-from fastapi import File, UploadFile, Form
+from fastapi import UploadFile
 from fastapi.responses import JSONResponse
 from app.services.ml_service import procesar_frame, procesar_foto_chat_pipeline
 from app.DTOs.analysis_dto import AnalisisResponseDTO
